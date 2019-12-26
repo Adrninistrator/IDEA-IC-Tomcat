@@ -1,0 +1,244 @@
+//Author: https://github.com/Adrninistrator
+
+import java.nio.file.Files
+
+ext {
+    tomcatBuildDir = "build/tomcat"
+    xmlHeader = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+}
+
+task startTomcat {
+
+    String appName = System.getProperty("appName")
+    if (isStringBlank(appName)) {
+        return
+    }
+
+    String noBuild = System.getProperty("noBuild")
+    println "noBuild参数值: " + noBuild
+    if (isStringBlank(noBuild)) {
+        startTomcat.dependsOn(classes)
+    }
+
+    doLast {
+        if (isStringBlank(appName)) {
+            println "未指定参数appName，不执行startTomcat任务"
+            return
+        }
+        println "appName参数值: " + appName
+
+        String contextPath = System.getProperty("contextPath")
+        if (isStringBlank(contextPath)) {
+            contextPath = appName
+        }
+        println "contextPath参数值: " + contextPath
+
+        String arg4Tomcat = System.getProperty("arg4Tomcat")
+        println "arg4Tomcat参数值: " + arg4Tomcat
+
+        String tomcatDir = System.getenv("TOMCAT_HOME_4IDEA")
+        if (isStringBlank(tomcatDir)) {
+            println "未设置环境变量TOMCAT_HOME_4IDEA（指定Tomcat安装目录）"
+            return
+        }
+        println "tomcatDir参数值: " + tomcatDir
+
+        String instanceDir = System.getenv("TOMCAT_INSTANCE_4IDEA")
+        if (isStringBlank(instanceDir)) {
+            instanceDir = System.getProperty("user.home") + File.separator + ".tomcat_idea"
+        }
+        println "instanceDir参数值: " + instanceDir
+
+        file(instanceDir).mkdirs()
+
+        String currentDir = file(".").path
+        println "当前路径: " + currentDir
+
+        String appDirPath = instanceDir + File.separator + appName
+        println "当前应用使用的Tomcat实例目录: " + appDirPath
+
+        try {
+            if (isStringBlank(noBuild)) {
+                buildFiles4WebApp()
+            } else {
+                println "参数指定不需要生成Web应用所需文件"
+            }
+
+            checkCreateTomcatInstance(appDirPath, tomcatDir)
+
+            handleXmlFile(contextPath, appDirPath, currentDir)
+
+            runTomcat(appName, appDirPath, tomcatDir, arg4Tomcat)
+        } catch (Exception e) {
+            e.printStackTrace()
+            return false
+        }
+    }
+}
+
+void buildFiles4WebApp() {
+
+    println "生成Web应用所需文件"
+
+    mkdir tomcatBuildDir + "/WEB-INF"
+
+    copy {
+        from sourceSets.main.output
+        into file(tomcatBuildDir + "/WEB-INF/classes")
+    }
+    copy {
+        from file("src/main/resources/")
+        into file(tomcatBuildDir + "/WEB-INF/classes")
+    }
+    copy {
+        from file("src/main/webapp/")
+        into file(tomcatBuildDir)
+    }
+    copy {
+        from configurations.compile
+        into file(tomcatBuildDir + "/WEB-INF/lib")
+    }
+
+    println "生成Web应用所需文件-完成"
+}
+
+void checkCreateTomcatInstance(String appDirPath, String tomcatDir) {
+
+    println "判断是否需要创建Tomcat实例"
+
+    File appDir = file(appDirPath)
+    if (appDir.exists()) {
+        if (appDir.isDirectory()) {
+            println "当前应用使用的Tomcat实例目录已存在，不再创建: " + appDirPath
+            return
+        } else {
+            println "存在但不是目录: " + appDirPath
+            throw new RuntimeException("存在但不是目录: " + appDirPath)
+        }
+    }
+
+    println "创建Tomcat实例"
+
+    file(appDirPath).mkdir()
+
+    copy {
+        from file(tomcatDir + File.separator + "bin")
+        into file(appDirPath + File.separator + "bin")
+    }
+    copy {
+        from file(tomcatDir + File.separator + "conf")
+        into file(appDirPath + File.separator + "conf")
+    }
+
+    file(appDirPath + File.separator + "logs").mkdir()
+    file(appDirPath + File.separator + "temp").mkdir()
+    file(appDirPath + File.separator + "work").mkdir()
+}
+
+void handleXmlFile(String contextPath, String appDirPath, String currentDir) {
+    String confDir = appDirPath + File.separator + "conf/Catalina/localhost"
+    file(confDir).mkdirs()
+
+    files(file(confDir).listFiles()).each { file ->
+        if (file.isFile()) {
+            String fileNameLoser = file.name.toLowerCase()
+            if (fileNameLoser.endsWith(".xml") && !fileNameLoser.equals(contextPath.toLowerCase() + ".xml")) {
+                println "重命名文件 " + file.path + " 为 " + file.path + ".bak"
+                file.renameTo(file.path + ".bak")
+            }
+        }
+    }
+
+    String content = "<Context path=\"\" docBase=\"{docBase}\" />".replace("{docBase}", currentDir + File.separator + tomcatBuildDir);
+    String xmlFilePath = confDir + File.separator + contextPath + ".xml"
+    String[] contentArray = [xmlHeader, content].toArray()
+
+    writeFileIfNecessary(xmlFilePath, contentArray)
+}
+
+void runTomcat(String appName, String appDirPath, String tomcatDir, String arg4Tomcat) {
+
+    String batStopFilePath = appDirPath + File.separator + appName + "-stop.bat";
+    println "生成bat停止脚本文件: " + batStopFilePath
+
+    List<String> contentList = new ArrayList<>(6)
+    contentList.add("cd " + appDirPath)
+    contentList.add(appDirPath.substring(0, 1) + ":")
+    contentList.add("set CATALINA_HOME=" + tomcatDir)
+    contentList.add("set CATALINA_BASE=" + appDirPath)
+    contentList.add("bin\\shutdown.bat")
+
+    writeFileIfNecessary(batStopFilePath, (String[]) contentList.toArray())
+
+    String batStartFilePath = appDirPath + File.separator + appName + "-start.bat";
+    println "生成bat启动脚本文件: " + batStartFilePath
+
+    contentList.remove(4)
+    contentList.add("set JAVA_OPTS=" + arg4Tomcat)
+    contentList.add("bin\\startup.bat")
+
+    writeFileIfNecessary(batStartFilePath, (String[]) contentList.toArray())
+
+    String[] args = ["cmd.exe", "/c", batStartFilePath].toArray()
+    Runtime.getRuntime().exec(args)
+}
+
+boolean isStringBlank(String str) {
+    return str == null || str.length() == 0 || str.trim().length() == 0
+}
+
+void writeFileIfNecessary(String filePath, String[] contentArray) {
+
+    File file = new File(filePath)
+
+    if (isFileEquals(file, contentArray)) {
+        println "文件已存在且不需要重新写入: " + file.getPath()
+        return
+    }
+
+    if (file.exists()) {
+        Files.delete(file.toPath())
+    }
+
+    writeFile(file, contentArray)
+}
+
+boolean isFileEquals(File file, String[] contentArray) {
+
+    if (!file.exists()) {
+        println "文件不存在: " + file.getPath()
+        return false
+    }
+    if (file.isDirectory()) {
+        println "存在但不是文件: " + file.getPath()
+        throw new RuntimeException("存在但不是文件: " + file.getPath())
+    }
+
+    int lineNum = contentArray.size()
+
+    boolean equals = true
+
+    file.withReader("UTF-8") { reader ->
+        for (int i = 0; i < lineNum; i++) {
+            String line = reader.readLine()
+            if (!contentArray[i].equals(line)) {
+                equals = false
+                return
+            }
+        }
+        if (reader.readLine() != null) {
+            equals = false
+            return
+        }
+    }
+    return equals
+}
+
+void writeFile(File file, String[] contentArray) {
+    println "写入文件: " + file.getPath()
+    file.withWriter("UTF-8") { writer ->
+        for (String line : contentArray) {
+            writer.writeLine(line)
+        }
+    }
+}

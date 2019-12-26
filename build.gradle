@@ -1,0 +1,142 @@
+group 'com.test'
+version '1.0.0'
+
+apply plugin: 'war'
+apply plugin: 'eclipse-wtp'
+
+def projectName = 'IDEA-IC-Tomcat'
+description = "IDEA-IC-Tomcat subsystem"
+version = "1.0.0"
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+
+    implementation.exclude module: 'slf4j-log4j12'
+    implementation.exclude module: 'log4j'
+    implementation.exclude module: 'commons-logging'    
+    implementation.exclude module: 'jsp-api'
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src/main/java'
+        }
+
+        resources {
+            srcDir 'src/main/resources'
+        }
+    }
+
+    test {
+        java {
+            srcDir 'src/unit.test/java'
+        }
+
+        resources {
+            srcDir 'src/unit.test/resources'
+        }
+    }
+}
+
+clean {
+    delete 'dist'
+    delete 'build'
+}
+
+List servlet = ['javax.servlet:javax.servlet-api:4.0.0']
+
+List apache_commons = [
+]
+
+def spring_version = "4.3.16.RELEASE"
+List junit = [
+        "junit:junit:4.12",
+        "org.springframework:spring-test:$spring_version"
+]
+
+List spring = [
+        "org.springframework:spring-web:$spring_version",
+        "org.springframework:spring-aspects:$spring_version",
+        "org.springframework:spring-webmvc:$spring_version",
+        "org.springframework:spring-context-support:$spring_version"
+]
+
+List log4jweb = ['org.apache.logging.log4j:log4j-web:2.8.2']
+
+List dom4j = ['dom4j:dom4j:1.6.1']
+
+def jackson_ver = "2.9.4"
+List jackson = [
+        "com.fasterxml.jackson.core:jackson-databind:$jackson_ver",
+        "com.fasterxml.jackson.module:jackson-module-jaxb-annotations:$jackson_ver"
+]
+
+List disruptor = ['com.lmax:disruptor:3.3.7']
+
+List logger = [
+        'org.apache.logging.log4j:log4j-api:2.9.1',
+        'org.apache.logging.log4j:log4j-core:2.9.1',
+        'org.apache.logging.log4j:log4j-slf4j-impl:2.9.1',
+        "org.slf4j:jcl-over-slf4j:1.7.28"
+]
+
+dependencies {
+    compile spring, apache_commons, log4jweb, jackson, dom4j, disruptor, logger
+    providedCompile servlet
+    testCompile servlet, junit
+}
+
+compileJava.dependsOn clean
+compileJava.options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+
+war {
+    destinationDir file('dist/apps')
+    archiveName "IDEA-IC-Tomcat.war"
+
+    // 去掉和 Web 容器冲突的包（容器启动会报 Warning），不能直接用 exclude，因为 jar 包不属于 Resources
+    rootSpec.exclude '**/javax.el-api*.jar'
+
+    manifest {
+        attributes 'Implementation-Title': project.description
+        attributes 'Build-By': System.getProperty('user.name')
+        attributes 'Build-Time': new Date().format("yyyy-MM-dd HH:mm:ss")
+        attributes 'Source-Compatibility': project.sourceCompatibility
+        attributes 'Target-Compatibility': project.targetCompatibility
+    }
+
+    doLast {
+        copy {
+            from file('src/main/resources/')
+            into 'dist/conf'
+            exclude 'buildconf'
+        }
+
+        copy {
+            from file('src/main/resources/buildconf')
+            into 'dist/conf'
+        }
+    }
+}
+
+task createJavaProject {
+    doLast {
+        sourceSets*.java.srcDirs*.each { it.mkdirs() }
+        sourceSets*.resources.srcDirs*.each { it.mkdirs() }
+    }
+}
+
+task testTask {
+    doFirst {
+        println "测试-" + System.getProperty("arg")
+    }
+}
+
+apply from: 'runTomcat.gradle'

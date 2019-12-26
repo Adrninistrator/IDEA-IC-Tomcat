@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xmlns:context="http://www.springframework.org/schema/context"
+   xmlns:aop="http://www.springframework.org/schema/aop"
+   xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context-4.0.xsd
+        http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop-4.0.xsd"
+   default-lazy-init="true">
+
+   <!-- Activates annotation-based bean configuration -->
+   <context:annotation-config />
+
+   <!-- 对包中的类进行扫描，以完成 非Web 相关的 Bean 创建和自动注入 -->
+   <context:component-scan base-package="com.test" use-default-filters="true">
+      <context:include-filter type="annotation" expression="org.aspectj.lang.annotation.Aspect" />
+      <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller" />
+   </context:component-scan>
+
+   <!-- 指定proxy-target-class="true"，AOP使用CGLIB，不使用JDK动态代理 -->
+   <aop:aspectj-autoproxy proxy-target-class="true"/>
+
+   <!-- 主配置文件：带缓存功能的配置加载（context:property-placeholder 方式无缓存且会多文件合并） -->
+   <bean id="configProvider" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+      <property name="location" value="classpath:config.properties" />
+      <property name="fileEncoding" value="UTF-8" />
+   </bean>
+
+   <!-- 国际化资源定义 -->
+   <bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+      <property name="basename" value="classpath:messages" />
+      <property name="fileEncodings" value="utf-8" />
+      <property name="cacheSeconds" value="3600" />
+   </bean>
+
+</beans>
