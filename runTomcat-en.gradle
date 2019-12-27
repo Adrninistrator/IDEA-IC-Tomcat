@@ -1,0 +1,244 @@
+//Author: https://github.com/Adrninistrator
+
+import java.nio.file.Files
+
+ext {
+    tomcatBuildDir = "build/tomcat"
+    xmlHeader = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+}
+
+task startTomcat {
+
+    String appName = System.getProperty("appName")
+    if (isStringBlank(appName)) {
+        return
+    }
+
+    String noBuild = System.getProperty("noBuild")
+    println "noBuild argument: " + noBuild
+    if (isStringBlank(noBuild)) {
+        startTomcat.dependsOn(classes)
+    }
+
+    doLast {
+        if (isStringBlank(appName)) {
+            println "appName argument is not specified，do not run startTomcat task"
+            return
+        }
+        println "appName argument: " + appName
+
+        String contextPath = System.getProperty("contextPath")
+        if (isStringBlank(contextPath)) {
+            contextPath = appName
+        }
+        println "contextPath argument: " + contextPath
+
+        String arg4Tomcat = System.getProperty("arg4Tomcat")
+        println "arg4Tomcat argument: " + arg4Tomcat
+
+        String tomcatDir = System.getenv("TOMCAT_HOME_4IDEA")
+        if (isStringBlank(tomcatDir)) {
+            println "TOMCAT_HOME_4IDEA environment variable is not specified"
+            return
+        }
+        println "tomcatDir argument: " + tomcatDir
+
+        String instanceDir = System.getenv("TOMCAT_INSTANCE_4IDEA")
+        if (isStringBlank(instanceDir)) {
+            instanceDir = System.getProperty("user.home") + File.separator + ".tomcat_idea"
+        }
+        println "instanceDir argument: " + instanceDir
+
+        file(instanceDir).mkdirs()
+
+        String currentDir = file(".").path
+        println "Current directory: " + currentDir
+
+        String appDirPath = instanceDir + File.separator + appName
+        println "The directory of Tomcat instance which is used by current web application: " + appDirPath
+
+        try {
+            if (isStringBlank(noBuild)) {
+                buildFiles4WebApp()
+            } else {
+                println "The noBuild argument point out that it's not necessary to build files for web application"
+            }
+
+            checkCreateTomcatInstance(appDirPath, tomcatDir)
+
+            handleXmlFile(contextPath, appDirPath, currentDir)
+
+            runTomcat(appName, appDirPath, tomcatDir, arg4Tomcat)
+        } catch (Exception e) {
+            e.printStackTrace()
+            return false
+        }
+    }
+}
+
+void buildFiles4WebApp() {
+
+    println "Build files for web application"
+
+    mkdir tomcatBuildDir + "/WEB-INF"
+
+    copy {
+        from sourceSets.main.output
+        into file(tomcatBuildDir + "/WEB-INF/classes")
+    }
+    copy {
+        from file("src/main/resources/")
+        into file(tomcatBuildDir + "/WEB-INF/classes")
+    }
+    copy {
+        from file("src/main/webapp/")
+        into file(tomcatBuildDir)
+    }
+    copy {
+        from configurations.compile
+        into file(tomcatBuildDir + "/WEB-INF/lib")
+    }
+
+    println "Build files for web application done"
+}
+
+void checkCreateTomcatInstance(String appDirPath, String tomcatDir) {
+
+    println "Check whether it's necessary to create a new Tomcat instance"
+
+    File appDir = file(appDirPath)
+    if (appDir.exists()) {
+        if (appDir.isDirectory()) {
+            println "The directory of Tomcat instance which is used by current web application exists, do not create: " + appDirPath
+            return
+        } else {
+            println "Exists but it's not a directory: " + appDirPath
+            throw new RuntimeException("Exists but it's not a directory: " + appDirPath)
+        }
+    }
+
+    println "Create Tomcat instance"
+
+    file(appDirPath).mkdir()
+
+    copy {
+        from file(tomcatDir + File.separator + "bin")
+        into file(appDirPath + File.separator + "bin")
+    }
+    copy {
+        from file(tomcatDir + File.separator + "conf")
+        into file(appDirPath + File.separator + "conf")
+    }
+
+    file(appDirPath + File.separator + "logs").mkdir()
+    file(appDirPath + File.separator + "temp").mkdir()
+    file(appDirPath + File.separator + "work").mkdir()
+}
+
+void handleXmlFile(String contextPath, String appDirPath, String currentDir) {
+    String confDir = appDirPath + File.separator + "conf/Catalina/localhost"
+    file(confDir).mkdirs()
+
+    files(file(confDir).listFiles()).each { file ->
+        if (file.isFile()) {
+            String fileNameLoser = file.name.toLowerCase()
+            if (fileNameLoser.endsWith(".xml") && !fileNameLoser.equals(contextPath.toLowerCase() + ".xml")) {
+                println "Rename file " + file.path + " to " + file.path + ".bak"
+                file.renameTo(file.path + ".bak")
+            }
+        }
+    }
+
+    String content = "<Context path=\"\" docBase=\"{docBase}\" />".replace("{docBase}", currentDir + File.separator + tomcatBuildDir);
+    String xmlFilePath = confDir + File.separator + contextPath + ".xml"
+    String[] contentArray = [xmlHeader, content].toArray()
+
+    writeFileIfNecessary(xmlFilePath, contentArray)
+}
+
+void runTomcat(String appName, String appDirPath, String tomcatDir, String arg4Tomcat) {
+
+    String batStopFilePath = appDirPath + File.separator + appName + "-stop.bat";
+    println "Generate the stop script file: " + batStopFilePath
+
+    List<String> contentList = new ArrayList<>(6)
+    contentList.add("cd " + appDirPath)
+    contentList.add(appDirPath.substring(0, 1) + ":")
+    contentList.add("set CATALINA_HOME=" + tomcatDir)
+    contentList.add("set CATALINA_BASE=" + appDirPath)
+    contentList.add("bin\\shutdown.bat")
+
+    writeFileIfNecessary(batStopFilePath, (String[]) contentList.toArray())
+
+    String batStartFilePath = appDirPath + File.separator + appName + "-start.bat";
+    println "Generate the start script file: " + batStartFilePath
+
+    contentList.remove(4)
+    contentList.add("set JAVA_OPTS=" + arg4Tomcat)
+    contentList.add("bin\\startup.bat")
+
+    writeFileIfNecessary(batStartFilePath, (String[]) contentList.toArray())
+
+    String[] args = ["cmd.exe", "/c", batStartFilePath].toArray()
+    Runtime.getRuntime().exec(args)
+}
+
+boolean isStringBlank(String str) {
+    return str == null || str.length() == 0 || str.trim().length() == 0
+}
+
+void writeFileIfNecessary(String filePath, String[] contentArray) {
+
+    File file = new File(filePath)
+
+    if (isFileEquals(file, contentArray)) {
+        println "The file exists and it's not necessary to rewritten: " + file.getPath()
+        return
+    }
+
+    if (file.exists()) {
+        Files.delete(file.toPath())
+    }
+
+    writeFile(file, contentArray)
+}
+
+boolean isFileEquals(File file, String[] contentArray) {
+
+    if (!file.exists()) {
+        println "The file does not exist: " + file.getPath()
+        return false
+    }
+    if (file.isDirectory()) {
+        println "Exists but it's not a file: " + file.getPath()
+        throw new RuntimeException("Exists but it's not a file: " + file.getPath())
+    }
+
+    int lineNum = contentArray.size()
+
+    boolean equals = true
+
+    file.withReader("UTF-8") { reader ->
+        for (int i = 0; i < lineNum; i++) {
+            String line = reader.readLine()
+            if (!contentArray[i].equals(line)) {
+                equals = false
+                return
+            }
+        }
+        if (reader.readLine() != null) {
+            equals = false
+            return
+        }
+    }
+    return equals
+}
+
+void writeFile(File file, String[] contentArray) {
+    println "Write to file: " + file.getPath()
+    file.withWriter("UTF-8") { writer ->
+        for (String line : contentArray) {
+            writer.writeLine(line)
+        }
+    }
+}
