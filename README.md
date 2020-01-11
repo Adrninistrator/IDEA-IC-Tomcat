@@ -1,3 +1,5 @@
+[中文版][1]
+
 You can choose the runTomcat-en.gradle script which output English.
 
 The most important parameters are as below:
@@ -582,3 +584,5 @@ Refer to https://docs.oracle.com/javase/8/docs/jdk/api/jpda/jdi/com/sun/jdi/even
 Refer to https://docs.oracle.com/javase/8/docs/jdk/api/jpda/jdi/com/sun/jdi/request/EventRequest.html to explain that SUSPEND_ALL will suspend all threads when an event occurs; SUSPEND_NONE in The thread is not suspended when an event occurs.
 
 According to the above description, when the suspend parameter in the debugging parameters of the Java process is "y", all threads are temporarily suspended at startup; when the suspend parameter is "n", threads are not temporarily suspended at startup.
+
+[1]: https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/README-cn.md
