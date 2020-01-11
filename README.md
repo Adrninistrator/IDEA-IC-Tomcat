@@ -1,4 +1,4 @@
-[中文版][1]
+﻿[中文版][1]
 
 You can choose the runTomcat-en.gradle script which output English.
 
@@ -155,7 +155,7 @@ Test-abc
 
 Open IDEA's "Run/Debug Configurations" window, click the plus sign, and select "Gradle" from the pop-up menu to add a configuration for executing the corresponding Gradle task.
 
-![pic](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/pic/Snap8.jpg)
+![pic](pic/a01.jpg)
 
 Open the "Configuration" tab and modify the parameters.
 
@@ -165,37 +165,37 @@ Open the "Configuration" tab and modify the parameters.
 
 - Fill in the JVM parameters to be passed to the Gradle script to the right of "VM options", such as "-Darg = test_arg", click the arrow icon to expand the edit box.
 
-![pic](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/pic/Snap7.jpg)
+![pic](pic/a02.jpg)
 
 After completing the configuration in Run/Debug Configurations, you can select the corresponding configuration and click the execute button to start execution.
 
-![pic](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/pic/Snap9.jpg)
+![pic](pic/a03.jpg)
 
 The results of the execution are displayed in the Run window, as shown below:
 
-![pic](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/pic/Snap28.jpg)
+![pic](pic/a04.jpg)
 
 When you need to modify the Gradle used by Run/Debug Configurations, you can open IDEA's "File | Settings | Build, Execution, Deployment | Build Tools | Gradle" menu and modify the "Use Gradle from" option.
 
-![pic](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/pic/Snap10.jpg)
+![pic](pic/a05.jpg)
 
 #### 3.3.2.1. Solve the Chinese garbled problem when running Gradle scripts in Run/Debug Configurations
 
 When running a Gradle script or compilation process in Run/Debug Configurations, the output Chinese may be garbled.
 
-![pic](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/pic/Snap14.jpg)
+![pic](pic/a06.jpg)
 
-![pic](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/pic/Snap27.jpg)
+![pic](pic/a07.jpg)
 
 The following settings can be used to solve the Chinese garbled problem.
 
 - Open IDEA's "Help" "Edit Custom VM Options ..." menu;
 
-![pic](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/pic/Snap15.jpg)
+![pic](pic/a08.jpg)
 
 - Add "-Dfile.encoding = UTF-8" to the end of the opened file;
 
-![pic](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/pic/Snap16.jpg)
+![pic](pic/a09.jpg)
 
 - Take effect after restarting the open IDEA.
 
@@ -205,7 +205,7 @@ The following settings can be used to solve the Chinese garbled problem.
 
 Open IDEA's "Run/Debug Configurations" window, click the plus sign, and select "Remote" from the pop-up menu to add a configuration for remote debugging.
 
-![pic](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/pic/Snap19.jpg)
+![pic](pic/a10.jpg)
 
 Open the "Configuration" tab and modify the parameters.
 
@@ -215,7 +215,7 @@ Open the "Configuration" tab and modify the parameters.
 - The "Port" parameter specifies the debug port that the debugged Java process listens on
 - "Use module classpath" select the source code module corresponding to the Java process being debugged
 
-![pic](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/pic/Snap21.jpg)
+![pic](pic/a11.jpg)
 
 The debugging parameters displayed by "Command line arguments for remote JVM" cannot be edited and will follow the parameter changes above.
 
@@ -232,15 +232,15 @@ Copy the debugging parameters corresponding to "Command line arguments for remot
 
 Select the corresponding remote debugging configuration and click the debug button to start debugging, which is similar to using IDEA to start the Java process and debug.
 
-![pic](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/pic/Snap22.jpg)
+![pic](pic/a12.jpg)
 
 After the debugging is successfully started, the "Debug" and "Console" window prompts "Connected to the target VM", as shown below.
 
-![pic](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/pic/Snap24.jpg)
+![pic](pic/a13.jpg)
 
 Click the Stop button to stop debugging. A prompt similar to "Disconnected from the target VM, address: 'localhost: 5555', transport: 'socket'" appears in the "Debug" window of IDEA.
 
-![pic](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/pic/Snap26.jpg)
+![pic](pic/a14.jpg)
 
 When you stop the Java process being debugged, IDEA-initiated debugging ends automatically.
 
@@ -373,11 +373,11 @@ Write to file: C:\Users\user\.tomcat_idea\test-tomcat\test-tomcat-start.bat
 
 When the above Gradle script is successfully executed, Tomcat will be started, and the Tomcat process will generate a separate command line window.
 
-![pic](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/pic/Snap17.jpg)
+![pic](pic/a15.jpg)
 
 Use a browser to access the Controller of the sample project. The URL is "http://localhost: 8080/test-tomcat/testrest/get". The output is the current timestamp and the JVM parameter value corresponding to "testValue". The access result is shown below. :
 
-![pic](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/pic/Snap18.jpg)
+![pic](pic/a16.jpg)
 
 #### 3.5.3.2. Use the Tomcat instance startup script to start the Tomcat process
 
@@ -401,7 +401,7 @@ When the "startTomcat" task of the runTomcat.gradle script is executed, a stop s
 
 Executing the above stop script will execute the stop command provided by Tomcat, which can stop the Tomcat process, the application instance can receive the Web container destruction notification, the TestPostConstructLazyFalse.preDestroy () method of the sample project will be executed, and the current directory will generate a directory, as shown below.
 
-![pic](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/pic/Snap49.jpg)
+![pic](pic/a17.jpg)
 
 #### 3.5.3.4. Debug Web Application
 
@@ -432,7 +432,7 @@ You can then start debugging in IDEA.
 
 Set a breakpoint for the TestRestController.get () method corresponding to the URI "/testrest/get". After accessing it through the browser, the IDEA debugger enters the breakpoint and can be viewed in the "Debug" "Debugger" window.
 
-![pic](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/pic/Snap25.jpg)
+![pic](pic/a18.jpg)
 
 ##### 3.5.3.4.2. Debugging from process startup (two operations)
 
@@ -450,7 +450,7 @@ When you need to start debugging from the process start, examples of debugging p
 
 Set the "suspend" parameter configured in the "arg4Tomcat" parameter of the Gradle task "startTomcat" to "y", and then use this command to start Tomcat. The Tomcat window only displays "Listening for transport dt_socket at address: 5555". No other content is displayed. That is, the Tomcat process is waiting for the debugger to connect to the port corresponding to the address parameter, and the startup is not completed.
 
-![pic](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/pic/Snap30.jpg)
+![pic](pic/a19.jpg)
 
 - Start IDEA debugging
 
@@ -460,7 +460,7 @@ Start debugging in IDEA and check that the Tomcat window log is updated, indicat
 
 Looking at the IDEA debugging window, the breakpoints set above have been entered, which proves that debugging can be started from the start of the Web application.
 
-![pic](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/pic/Snap31.jpg)
+![pic](pic/a20.jpg)
 
 ##### 3.5.3.4.3. Start debugging from process startup (one-click completion)
 
@@ -468,15 +468,15 @@ The above operations starting from the process startup need to start the Tomcat 
 
 Open IDEA's "Run/Debug Configurations" window, select "Remote" configuration, click the plus button under "Before launch: Activate tool window", and select "Run Gradle task".
 
-![pic](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/pic/Snap39.jpg)
+![pic](pic/a21.jpg)
 
 The "Select Gradle Task" window pops up, "Gradle project", "Tasks", and "VM options" parameter configuration, please refer to the steps to add Gradle configuration in IDEA, start the Tomcat process through the "startTomcat" task, you need to ensure that the "VM options" parameter is filled in The debug parameter "suspend" in the "arg4Tomcat" parameter is "y".
 
-![pic](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/pic/Snap40.jpg)
+![pic](pic/a22.jpg)
 
 The configured Gradle task appears in the list under "Before launch: Activate tool window".
 
-![pic](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/pic/Snap41.jpg)
+![pic](pic/a23.jpg)
 
 After completing the above configuration, before starting IDEA debugging, the specified Gradle task "startTomcat" will be executed, and the Tomcat process will be started with the debugging parameter "suspend = y". One-click debugging can be implemented from the start of the process, which is similar to the IDEA Ultimate or Eclipse debugging of web applications from the start.
 
@@ -486,21 +486,21 @@ When you need to debug Tomcat's classes, you need to add the Tomcat's lib direct
 
 Open IDEA's "Project Structure" window, select "Project Settings" "Modules" tab, select the main Web project module in the window that opens, select the "Dependencies" tab, click the plus button, and select "JARs or directories .. ."menu.
 
-![pic](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/pic/Snap33.jpg)
+![pic](pic/a24.jpg)
 
 In the pop-up window, select the lib directory of the current Tomcat installation directory.
 
-![pic](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/pic/Snap35.jpg)
+![pic](pic/a25.jpg)
 
 After adding, Tomcat's lib directory will appear at the bottom of the "Dependencies" tab.
 
-![pic](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/pic/Snap36.jpg)
+![pic](pic/a26.jpg)
 
 When Gradle is refreshed, the project configuration will be reset, and the dependencies added above will be cleaned up and need to be added again.
 
 After completing the above configuration, set a breakpoint in Tomcat's org.apache.catalina.startup.HostConfig $ DeployDescriptor class run method. Start debugging from the process startup. You can see that the breakpoint has been entered in the IDEA Debug window. This method is the first Tomcat class method executed when Tomcat starts.
 
-![pic](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/pic/Snap38.jpg)
+![pic](pic/a27.jpg)
 
 ## 3.6. Other instructions
 
@@ -512,7 +512,7 @@ The buildFiles4WebApp method in the runTomcat.gradle script is used to generate 
 
 The debug port corresponding to the adderss parameter specified in the debug parameters of the debugged Java process needs to be ensured that it is not monitored, otherwise the debugged Java process will fail to start and the window will automatically disappear. The Tomcat prompt is as follows.
 
-![pic](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/pic/Snap46.jpg)
+![pic](pic/a28.jpg)
 
 - Recreate Tomcat instance
 
