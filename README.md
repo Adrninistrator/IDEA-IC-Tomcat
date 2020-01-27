@@ -1,588 +1,562 @@
-﻿[中文版][1]
+﻿[English version](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/README-en.md)
 
-You can choose the runTomcat-en.gradle script which output English.
+```
+目录
 
-The most important parameters are as below:
+1. 前言
+2. 尝试的方法
+    2.1. Smart Tomcat插件
+3. 可行方法
+    3.1. 说明
+    3.2. 依赖环境
+    3.3. IDEA中执行Gradle脚本
+        3.3.1. 在Terminal中执行
+        3.3.2. 在Run/Debug Configurations中执行
+            3.3.2.1. 解决在Run/Debug Configurations中执行Gradle脚本中文乱码问题
+    3.4. 在IDEA中进行远程调试
+        3.4.1. 在IDEA创建远程调试配置并获取调试参数
+        3.4.2. 增加调试参数后启动被调试Java进程
+        3.4.3. 在IDEA启动调试
+    3.5. runTomcat.gradle脚本使用方法
+        3.5.1. 任务及参数说明
+            3.5.1.1. 环境变量
+            3.5.1.2. JVM参数
+        3.5.2. 环境配置
+        3.5.3. 使用场景
+            3.5.3.1. 正常启动Tomcat进程
+            3.5.3.2. 使用Tomcat实例启动脚本启动Tomcat进程
+            3.5.3.3. 停止Tomcat进程
+                3.5.3.3.1. 直接关闭Tomcat窗口（应用实例无法接收到Web容器销毁通知）
+                3.5.3.3.2. 使用Tomcat实例停止脚本停止Tomcat进程（应用实例可以接收到Web容器销毁通知）
+            3.5.3.4. 调试Web应用
+                3.5.3.4.1. 进程启动后调试
+                3.5.3.4.2. 从进程启动开始调试（操作两次）
+                3.5.3.4.3. 从进程启动开始调试（一键完成）
+                3.5.3.4.4. 调试Tomcat的类
+    3.6. 其他说明
+    3.7. 原理说明
+        3.7.1. 生成Web应用所需文件
+        3.7.2. 生成Tomcat实例
+        3.7.3. 处理Tomcat上下文描述符文件
+        3.7.4. 生成Tomcat实例启动/停止脚本
+        3.7.5. 启动Tomcat
+        3.7.6. 调试Web应用
+```
 
-- Configure the Environment variable TOMCAT_HOME_4IDEA
+# 1. 前言
 
-This environment variable is used to tell the Gradle script runTomcat.gradle what is the directory of the installed Tomcat. For example: C:\program\apache-tomcat-7.0.79 .
+IntelliJ IDEA Community Edition（社区版）不支持Tomcat，不想花钱购买Ultimate版本，也不想使用Eclipse，尝试通过其他方式使IDEA社区版支持Tomcat。
 
-- Add the JVM argument appName
+# 2. 尝试的方法
 
-This argument is used to tell the Gradle script what is the name of current web application, it will use this argument to create a new Tomcat Instance.
+## 2.1. Smart Tomcat插件
 
-By default, appName argument determines the context path of current web application.
+在IDEA社区版（2019.2.4）中安装了Smart Tomcat插件，并使用其启动Tomcat应用，遇到了以下问题：
 
-- Add the JVM argument arg4Tomcat
+- Web应用的class文件未被自动拷贝到对应的Web应用根目录中，导致Web应用的代码未被加载，需要手工处理，使用不方便；
+- Tomcat日志只生成了localhost_access_log.txt日志文件，没有生成catalina.log、localhost.log等日志文件，排查问题不方便。
 
-When current Tomcat instance starts up, it will use arg4Tomcat argument as the JAVA_OPTS argument, i.e. the JVM argument used by current Tomcat instance.
+使用Smart Tomcat插件遇到问题之后，放弃了使用该插件，没有再去分析是否因为使用方法不当。
 
-- Example
+# 3. 可行方法
+
+## 3.1. 说明
+
+之后通过Gradle脚本，使IDEA社区版支持Tomcat（也支持IDEA Ultimate版）。
+
+完成的Gradle脚本及示例Web工程代码可以从 https://github.com/Adrninistrator/IDEA-IC-Tomcat/ 、 https://gitee.com/adrninistrator/IDEA-IC-Tomcat/  下载，脚本内容很短，有效行数不超过200行，处理也很简单。
+
+通过上述Gradle脚本，结合IDEA的功能，在完成配置后，可以实现以下功能，能够达到与Eclipse或IDEA Ultimate版本对Tomcat支持的功能接近的效果。
+
+- 一键启动Tomcat并加载Web应用
+- 一键停止Tomcat（应用实例可以接收到Web容器销毁通知）
+- 一键启动可调试的Tomcat（Web应用）
+- 一键从Tomcat（Web应用）启动时开始调试
+
+## 3.2. 依赖环境
+
+- IDEA
+
+使用IntelliJ IDEA Community Edition 2019.2.4版本。
+
+- Tomcat
+
+支持Tomcat 7、8、9版本（测试过Tomcat 7.0.55、7.0.79、8.5.20、9.0.30版本），理论上也支持Tomcat 5、6版本（未测试）。
+
+- Gradle
+
+支持Gradle 4、5、6版本（测试过Gradle 4.1、4.7、5.6.4、6.0.1版本）。
+
+- JDK
+
+使用JDK 1.8.0_144版本。
+
+- 操作系统
+
+使用Windows 7 x64 SP1版本。
+
+## 3.3. IDEA中执行Gradle脚本
+
+假设存在以下Gradle任务：
+
+```gradle
+task testTask {
+    doFirst {
+        println "测试-" + System.getProperty("arg")
+    }
+}
+```
+
+### 3.3.1. 在Terminal中执行
+
+在IDEA的Terminal中执行以上Gradle任务时，可以通过gradle或gradlew命令，以命令行的方式执行，并可以通过“-D”前缀指定传递给Gradle脚本的JVM参数，与执行Java程序时类似。
+
+执行上述任务的Gradle命令示例如下所示：
+
+```cmd
+gradle testTask -Darg=abc
+gradlew testTask -Darg=abc
+```
+
+执行的结果如下所示：
+
+```
+> Task :testTask
+测试-abc
+```
+
+### 3.3.2. 在Run/Debug Configurations中执行
+
+打开IDEA的“Run/Debug Configurations”窗口，点击加号后，从弹出菜单中选择“Gradle”，可以新增一个配置，用于执行对应的Gradle任务。
+
+![pic](pic/a01.jpg)
+
+打开“Configuration”标签页，对参数进行修改。
+
+- 点击“Gradle project”右侧的图标，选择当前项目；
+
+- 在“Tasks”右侧填入需要执行的Gradle任务名称，如“testTask”；
+
+- 在“VM options”右侧填入需要传递给Gradle脚本的JVM参数，如“-Darg=test_arg”，点击箭头图标可以展开编辑框。
+
+![pic](pic/a02.jpg)
+
+在Run/Debug Configurations中完成配置后，可以选中对应的配置，点击执行按钮开始执行。
+
+![pic](pic/a03.jpg)
+
+执行的结果在“Run”窗口中显示，如下所示：
+
+![pic](pic/a04.jpg)
+
+当需要修改Run/Debug Configurations使用的Gradle时，可以打开IDEA的“File | Settings | Build, Execution, Deployment | Build Tools | Gradle”菜单，修改“Use Gradle from”选项。
+
+![pic](pic/a05.jpg)
+
+
+#### 3.3.2.1. 解决在Run/Debug Configurations中执行Gradle脚本中文乱码问题
+
+在Run/Debug Configurations中执行Gradle脚本或编译过程时，输出的中文可能乱码。
+
+![pic](pic/a06.jpg)
+
+或如下图所示：
+
+![pic](pic/a07.jpg)
+
+进行以下设置，可以解决上述中文乱码问题。
+
+- 打开IDEA的“Help”“Edit Custom VM Options...”菜单；
+
+![pic](pic/a08.jpg)
+
+- 在打开的文件最后增加“-Dfile.encoding=UTF-8”；
+
+![pic](pic/a09.jpg)
+
+- 重启已打开的IDEA后生效。
+
+## 3.4. 在IDEA中进行远程调试
+
+### 3.4.1. 在IDEA创建远程调试配置并获取调试参数
+
+打开IDEA的“Run/Debug Configurations”窗口，点击加号后，从弹出菜单中选择“Remote”，可以新增一个配置，用于进行远程调试。
+
+![pic](pic/a10.jpg)
+
+打开“Configuration”标签页，对参数进行修改。
+
+- “Debugger mode”选项保持“Attach to remote JVM”
+- “Transport”选项保持“Socket”
+- “Host”参数保持“localhost”
+- “Port”参数指定被调试的Java进程监听的调试端口
+- “Use module classpath”选择被调试的Java进程对应的源代码模块
+
+![pic](pic/a11.jpg)
+
+“Command line arguments for remote JVM”展示的调试参数不能编辑，会跟随上方的参数变化。
+
+- “Transport”选项“Socket”对应调试参数“transport=dt_socket”
+- “Port”参数对应调试参数“address=”
+
+### 3.4.2. 增加调试参数后启动被调试Java进程
+
+复制“Command line arguments for remote JVM”对应的调试参数，将其添加到被调试Java进程的JVM参数中，启动Java进程。
+
+**需要注意，IDEA调试配置中的Port参数，与被调试Java进程使用的调试参数中的address参数值需要相同，即调试器连接的端口需要与被调试Java进程监听的端口一致。**
+
+### 3.4.3. 在IDEA启动调试
+
+选中对应的远程调试配置，点击调试按钮开始调试，与使用IDEA启动Java进程并调试类似。
+
+![pic](pic/a12.jpg)
+
+调试启动成功后，在“Debug”“Console”窗口提示“Connected to the target VM”，如下所示。
+
+![pic](pic/a13.jpg)
+
+点击停止按钮可以停止调试，IDEA的“Debug”窗口会出现类似“Disconnected from the target VM, address: 'localhost:5555', transport: 'socket'”的提示。
+
+![pic](pic/a14.jpg)
+
+停止被调试Java进程时，IDEA启动的调试会自动结束。
+
+停止调试后，不会使被调试的Java进程退出。
+
+当对Tomcat进行调试时，停止调试后在Tomcat窗口会出现类似“Listening for transport dt_socket at address: 5555”提示。
+
+以上调试方法也支持非Web应用，以及远程的Java进程。
+
+## 3.5. runTomcat.gradle脚本使用方法
+
+将runTomcat.gradle脚本拷贝至Java Web应用工程中，在build.gradle脚本中添加“apply from: 'runTomcat.gradle'”。
+
+### 3.5.1. 任务及参数说明
+
+runTomcat.gradle脚本中提供了名称为“startTomcat”的任务，用于启动Tomcat并加载Web应用。
+
+在脚本中使用了以下参数。
+
+#### 3.5.1.1. 环境变量
+
+- TOMCAT_HOME_4IDEA
+
+|环境变量名称|TOMCAT_HOME_4IDEA|
+| ------------ | ------------ |
+|作用|指定需要使用的Tomcat的安装目录|
+|示例|C:\program\apache-tomcat-7.0.79|
+|必须设置|是|
+|说明|使用Tomcat解压后的目录|
+
+- TOMCAT_INSTANCE_4IDEA
+  
+|环境变量名称|TOMCAT_INSTANCE_4IDEA|
+| ------------ | ------------ |
+|作用|指定保存各应用对应的Tomcat实例的目录|
+|示例|D:\tomcat-test|
+|必须设置|否|
+|说明|默认使用当前用户目录的“.tomcat_idea”目录。例如为“C:\Users\user\.tomcat_idea”目录，在该目录中保存了各应用对应的Tomcat实例，各实例分别对应其中的一个目录|
+
+#### 3.5.1.2. JVM参数
+
+- appName
+  
+|JVM参数名称|appName|
+| ------------ | ------------ |
+|作用|指定当前应用对应的Tomcat实例的名称|
+|示例|app_test|
+|必须设置|是|
+
+- noBuild
+  
+|JVM参数名称|noBuild|
+| ------------ | ------------ |
+|作用|指定跳过Web应用的编译过程|
+|示例|1|
+|必须设置|否|
+|说明|当为非空时，会跳过；不指定或为空时，不会跳过|
+
+- contextPath
+  
+|JVM参数名称|contextPath|
+| ------------ | ------------ |
+|作用|指定当前Web应用的上下文路径|
+|示例|context_test|
+|必须设置|否|
+|说明|默认使用appName参数值|
+
+- arg4Tomcat
+  
+|JVM参数名称|arg4Tomcat|
+| ------------ | ------------ |
+|作用|启动Tomcat时使用的JVM参数|
+|示例|"-DtestValue=aaabbbccc -Dlog.home=E:\desktop\log-test -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5555"|
+|必须设置|否|
+|说明|***需要使用半角双引号包含全部的参数，否则会被空格截断***。可以指定jdwp调试参数|
+
+### 3.5.2. 环境配置
+
+在使用提供的Gradle脚本runTomcat.gradle时，首先需要完成环境配置，“TOMCAT_HOME_4IDEA”环境变量配置需要增加，“TOMCAT_INSTANCE_4IDEA”环境变量的配置可选。
+
+在完成环境变量配置后，需要重启已打开的IDEA后生效。
+
+为了验证环境变量配置是否已生效，可在IDEA的Terminal中执行“echo %TOMCAT_HOME_4IDEA%”，当配置完成时会输出对应的环境变量值，未配置或未生效时会输出“%TOMCAT_HOME_4IDEA%”。
+
+### 3.5.3. 使用场景
+
+#### 3.5.3.1. 正常启动Tomcat进程
+
+正常启动Tomcat进程，加载示例工程中的Web应用的Gradle命令如下所示：
 
 ```gradle
 gradlew startTomcat -DappName=test-tomcat -Darg4Tomcat="-DtestValue=aaabbbccc -Dlog.home=E:\desktop\log-test"
 ```
 
-I translate the following contents from Chinese to English by Google Translate.
+在以上示例中，指定当前应用对应的Tomcat实例的名称，以及Web应用的上下文路径，均为“test-tomcat”，指定启动Tomcat时使用的JVM参数为“"-DtestValue=aaabbbccc -Dlog.home=E:\desktop\log-test"”。
 
-```
-table of Contents
-
-1 Introduction
-2. The method to try
-    2.1. Smart Tomcat Plugin
-Feasible method
-    3.1. Description
-    3.2. Dependent Environment
-    3.3. Execute Gradle script in IDEA
-        3.3.1. Execution in Terminal
-        3.3.2. Execute in Run/Debug Configurations
-            3.3.2.1. Solve the Chinese garbled problem when running Gradle script in Run/Debug Configurations
-    3.4. Remote debugging in IDEA
-        3.4.1. Create remote debugging configuration and get debugging parameters in IDEA
-        3.4.2. Start debugged Java process after adding debug parameters
-        3.4.3. Start debugging in IDEA
-    3.5. How to use runTomcat.gradle script
-        3.5.1. Task and parameter description
-            3.5.1.1. Environment variables
-            3.5.1.2. JVM parameters
-        3.5.2. Environment Configuration
-        3.5.3. Use scenarios
-            3.5.3.1. Start the Tomcat process normally
-            3.5.3.2. Use the Tomcat instance startup script to start the Tomcat process
-            3.5.3.3. Stopping the Tomcat process
-                3.5.3.3.1. Close the Tomcat window directly (the application instance cannot receive the web container destruction notification)
-                3.5.3.3.2. Use the Tomcat instance stop script to stop the Tomcat process (the application instance can receive a web container destruction notification)
-            3.5.3.4. Debug Web Application
-                3.5.3.4.1. Debugging after process startup
-                3.5.3.4.2. Debugging from process start (two operations)
-                3.5.3.4.3. Start debugging from process start (one-click completion)
-                3.5.3.4.4. Debugging Tomcat classes
-    3.6. Other notes
-    3.7. Principles
-        3.7.1. Generate files required for web applications
-        3.7.2. Generate Tomcat instance
-        3.7.3. Processing Tomcat context descriptor files
-        3.7.4. Generate Tomcat instance start/stop script
-        3.7.5. Starting Tomcat
-        3.7.6. Debugging Web Applications
-```
-
-# 1 Introduction
-
-IntelliJ IDEA Community Edition (community edition) does not support Tomcat. You don't want to spend money to buy the Ultimate version or use Eclipse. Try to make IDEA community edition support Tomcat through other methods.
-
-# 2. Methods to try
-
-## 2.1. Smart Tomcat Plugin
-
-I installed the Smart Tomcat plug-in in the IDEA Community Edition (2019.2.4) and used it to start the Tomcat application. I encountered the following problems:
-
-- The web application class file is not automatically copied to the corresponding web application root directory, resulting in the web application code not being loaded, which requires manual processing, which is inconvenient to use;
-- The Tomcat log only generates the localhost_access_log.txt log file. Catalina.log, localhost.log and other log files are not generated, which is inconvenient for troubleshooting.
-
-After encountering problems using the Smart Tomcat plug-in, I abandoned the use of the plug-in and did not analyze whether it was due to improper use.
-
-# 3. Possible methods
-
-## 3.1. Description
-
-Later, through the Gradle script, the IDEA community edition supports Tomcat (IDEA Ultimate edition is also supported).
-
-The completed Gradle script and sample web project code can be downloaded from https://github.com/Adrninistrator/IDEA-IC-Tomcat/, https://gitee.com/adrninistrator/IDEA-IC-Tomcat/, the content of the script is very short , The effective number of lines does not exceed 200 lines, processing is also very simple.
-
-Through the above Gradle script combined with the functions of IDEA, after completing the configuration, the following functions can be implemented, which can achieve the effect close to the functions supported by Eclipse or IDEA Ultimate for Tomcat.
-
-- One-click to start Tomcat and load web application
-- One-click stop Tomcat (application instance can receive web container destruction notification)
-- One-click debugging of Tomcat (web application)
-- One-click debugging from Tomcat (web application) startup
-
-## 3.2. Dependent Environment
-
-- IDEA
-
-Use IntelliJ IDEA Community Edition 2019.2.4.
-
-- Tomcat
-
-Supports Tomcat 7, 8, and 9 versions (tested with Tomcat 7.0.55, 7.0.79, 8.5.20, 9.0.30), and theoretically also supports Tomcat versions 5 and 6 (not tested).
-
-- Gradle
-
-Supports Gradle 4, 5, and 6 (tested with Gradle 4.1, 4.7, 5.6.4, 6.0.1).
-
-- JDK
-
-Use JDK 1.8.0_144.
-
-- operating system
-
-Use Windows 7 x64 SP1 version.
-
-## 3.3. Execute Gradle Script in IDEA
-
-Assume the following Gradle tasks exist:
+第一次执行上述Gradle命令时（或删除了当前应用对应的Tomcat实例的目录后），Gradle脚本输出的结果如下所示：
 
 ```gradle
-task testTask {
-    doFirst {
-        println "test-" + System.getProperty ("arg")
-    }
-}
-```
-
-### 3.3.1. Execute in Terminal
-
-When executing the above Gradle tasks in IDEA Terminal, you can use the gradle or gradlew command to execute them from the command line, and you can specify the JVM parameters passed to the Gradle script through the "-D" prefix, similar to when executing Java programs.
-
-An example of a Gradle command that performs the above tasks is shown below:
-
-```cmd
-gradle testTask -Darg = abc
-gradlew testTask -Darg = abc
-```
-
-The results of the execution are as follows:
-
-```
-Task: testTask
-Test-abc
-```
-
-### 3.3.2. Execute in Run/Debug Configurations
-
-Open IDEA's "Run/Debug Configurations" window, click the plus sign, and select "Gradle" from the pop-up menu to add a configuration for executing the corresponding Gradle task.
-
-![pic](pic/a01.jpg)
-
-Open the "Configuration" tab and modify the parameters.
-
-- Click the icon to the right of "Gradle project" and select the current project;
-
-- Enter the name of the Gradle task to be executed to the right of "Tasks", such as "testTask";
-
-- Fill in the JVM parameters to be passed to the Gradle script to the right of "VM options", such as "-Darg = test_arg", click the arrow icon to expand the edit box.
-
-![pic](pic/a02.jpg)
-
-After completing the configuration in Run/Debug Configurations, you can select the corresponding configuration and click the execute button to start execution.
-
-![pic](pic/a03.jpg)
-
-The results of the execution are displayed in the Run window, as shown below:
-
-![pic](pic/a04.jpg)
-
-When you need to modify the Gradle used by Run/Debug Configurations, you can open IDEA's "File | Settings | Build, Execution, Deployment | Build Tools | Gradle" menu and modify the "Use Gradle from" option.
-
-![pic](pic/a05.jpg)
-
-#### 3.3.2.1. Solve the Chinese garbled problem when running Gradle scripts in Run/Debug Configurations
-
-When running a Gradle script or compilation process in Run/Debug Configurations, the output Chinese may be garbled.
-
-![pic](pic/a06.jpg)
-
-![pic](pic/a07.jpg)
-
-The following settings can be used to solve the Chinese garbled problem.
-
-- Open IDEA's "Help" "Edit Custom VM Options ..." menu;
-
-![pic](pic/a08.jpg)
-
-- Add "-Dfile.encoding = UTF-8" to the end of the opened file;
-
-![pic](pic/a09.jpg)
-
-- Take effect after restarting the open IDEA.
-
-## 3.4. Remote debugging in IDEA
-
-### 3.4.1. Create remote debugging configuration and get debugging parameters in IDEA
-
-Open IDEA's "Run/Debug Configurations" window, click the plus sign, and select "Remote" from the pop-up menu to add a configuration for remote debugging.
-
-![pic](pic/a10.jpg)
-
-Open the "Configuration" tab and modify the parameters.
-
-- "Debugger mode" option remains "Attach to remote JVM"
-- "Transport" option remains "Socket"
-- "Host" parameter remains "localhost"
-- The "Port" parameter specifies the debug port that the debugged Java process listens on
-- "Use module classpath" select the source code module corresponding to the Java process being debugged
-
-![pic](pic/a11.jpg)
-
-The debugging parameters displayed by "Command line arguments for remote JVM" cannot be edited and will follow the parameter changes above.
-
-- "Transport" option "Socket" corresponds to the debugging parameter "transport = dt_socket"
-- "Port" parameter corresponds to debugging parameter "address ="
-
-### 3.4.2. Start debugging Java process after adding debugging parameters
-
-Copy the debugging parameters corresponding to "Command line arguments for remote JVM", add them to the JVM parameters of the Java process being debugged, and start the Java process.
-
-** It should be noted that the Port parameter in the IDEA debugging configuration must be the same as the address parameter value in the debugging parameters used by the debugged Java process, that is, the port to which the debugger is connected must be the same as the port monitored by the debugged Java process. **
-
-### 3.4.3. Start debugging in IDEA
-
-Select the corresponding remote debugging configuration and click the debug button to start debugging, which is similar to using IDEA to start the Java process and debug.
-
-![pic](pic/a12.jpg)
-
-After the debugging is successfully started, the "Debug" and "Console" window prompts "Connected to the target VM", as shown below.
-
-![pic](pic/a13.jpg)
-
-Click the Stop button to stop debugging. A prompt similar to "Disconnected from the target VM, address: 'localhost: 5555', transport: 'socket'" appears in the "Debug" window of IDEA.
-
-![pic](pic/a14.jpg)
-
-When you stop the Java process being debugged, IDEA-initiated debugging ends automatically.
-
-Stopping debugging will not cause the debugged Java process to exit.
-
-When debugging Tomcat, a prompt similar to "Listening for transport dt_socket at address: 5555" will appear in the Tomcat window after you stop debugging.
-
-The above debugging methods also support non-Web applications and remote Java processes.
-
-## 3.5. How to use runTomcat.gradle script
-
-Copy the runTomcat.gradle script into the Java web application project and add "apply from: 'runTomcat.gradle'" to the build.gradle script.
-
-### 3.5.1. Task and parameter description
-
-The runTomcat.gradle script provides a task named "startTomcat" to start Tomcat and load the web application.
-
-The following parameters are used in the script.
-
-#### 3.5.1.1. Environment Variables
-
-- TOMCAT_HOME_4IDEA
-
-| Environment Variable Name | TOMCAT_HOME_4IDEA |
-| ------------ | ------------ |
-| Function | Specify the Tomcat installation directory to be used |
-| Example | C:\program\apache-tomcat-7.0.79 |
-| Must be set | Yes |
-| Description | Using Tomcat Unzipped Directory |
-
-- TOMCAT_INSTANCE_4IDEA
-  
-| Environment Variable Name | TOMCAT_INSTANCE_4IDEA |
-| ------------ | ------------ |
-| Function | Specify the directory where the Tomcat instance corresponding to each application is stored |
-| Example | D:\tomcat-test |
-| Required | No |
-| Description | The ".tomcat_idea" directory of the current user directory is used by default. For example, the directory is "C:\Users\user\.tomcat_idea", and the Tomcat instance corresponding to each application is stored in this directory, and each instance corresponds to one of the directories |
-
-#### 3.5.1.2. JVM parameters
-
-- appName
-  
-| JVM parameter name | appName |
-| ------------ | ------------ |
-| Function | Specify the name of the Tomcat instance corresponding to the current application |
-| Example | app_test |
-| Must be set | Yes |
-
-- noBuild
-  
-| JVM parameter name | noBuild |
-| ------------ | ------------ |
-| Role | Specify to skip the compilation process of the web application |
-| Example | 1 |
-| Required | No |
-| Description | When it is not empty, it will be skipped; When it is not specified or empty, it will not be skipped |
-
-- contextPath
-  
-| JVM parameter name | contextPath |
-| ------------ | ------------ |
-| Function | Specify the context path of the current web application |
-| Example | context_test |
-| Required | No |
-| Description | The appName parameter value is used by default |
-
-- arg4Tomcat
-  
-| JVM parameter name | arg4Tomcat |
-| ------------ | ------------ |
-| Function | JVM parameters used when starting Tomcat |
-| Example | "-DtestValue = aaabbbccc -Dlog.home = E:\desktop\log-test -agentlib: jdwp = transport = dt_socket, server = y, suspend = n, address = 5555" |
-| Required | No |
-| Explanation | *** It is necessary to use half-width double quotes to include all parameters, otherwise it will be truncated by spaces ***. Can specify jdwp debugging parameters |
-
-### 3.5.2. Environment Configuration
-
-When using the provided Gradle script runTomcat.gradle, you must first complete the environment configuration. The "TOMCAT_HOME_4IDEA" environment variable configuration needs to be increased. The "TOMCAT_INSTANCE_4IDEA" environment variable configuration is optional.
-
-After the environment variables are configured, you need to restart the open IDEA to take effect.
-
-In order to verify whether the environment variable configuration has taken effect, you can execute "echo% TOMCAT_HOME_4IDEA%" in IDEA's Terminal. When the configuration is complete, the corresponding environment variable value will be output. If it is not configured or not effective, it will output "% TOMCAT_HOME_4IDEA%".
-
-### 3.5.3. Usage scenarios
-
-#### 3.5.3.1. Start the Tomcat process normally
-
-The Gradle command to start the Tomcat process normally and load the web application in the sample project is as follows:
-
-```gradle
-gradlew startTomcat -DappName = test-tomcat -Darg4Tomcat = "-DtestValue = aaabbbccc -Dlog.home = E:\desktop\log-test"
-```
-
-In the above example, the name of the Tomcat instance corresponding to the current application and the context path of the web application are both "test-tomcat". The JVM parameter used when starting Tomcat is specified as "" -DtestValue = aaabbbccc -Dlog.home = E:\desktop\log-test "".
-
-When the above Gradle command is executed for the first time (or after deleting the directory of the Tomcat instance corresponding to the current application), the output of the Gradle script is as follows:
-
-```gradle
-Configure project:
-noBuild parameter value: null
-
-Task: clean
-Task: compileJava
-Task: processResources
-Task: classes
+> Configure project :
+noBuild参数值: null
+
+> Task :clean
+> Task :compileJava
+> Task :processResources
+> Task :classes
 
 > Task :startTomcat
-appName argument: test-tomcat
-contextPath argument: test-tomcat
-arg4Tomcat argument: -DtestValue=aaabbbccc -Dlog.home=E:\desktop\log-test
-tomcatDir argument: C:\program-dir\apache-tomcat-7.0.55
-instanceDir argument: C:\Users\user\.tomcat_idea
-Current directory: E:\git-dir\pri-code\IDEA-IC-Tomcat
-The directory of Tomcat instance which is used by current web application: C:\Users\user\.tomcat_idea\test-tomcat
-Build files for web application
-Build files for web application done
-Check whether it's necessary to create a new Tomcat instance
-Create Tomcat instance
-Rename file C:\Users\user\.tomcat_idea\test-tomcat\conf\Catalina\localhost\test2.xml to C:\Users\user\.tomcat_idea\test-tomcat\conf\Catalina\localhost\test2.xml.bak
-The file does not exist: C:\Users\user\.tomcat_idea\test-tomcat\conf\Catalina\localhost\test-tomcat.xml
-Write to file: C:\Users\user\.tomcat_idea\test-tomcat\conf\Catalina\localhost\test-tomcat.xml
-Generate the stop script file: C:\Users\user\.tomcat_idea\test-tomcat\test-tomcat-stop.bat
-The file does not exist: C:\Users\user\.tomcat_idea\test-tomcat\test-tomcat-stop.bat
-Write to file: C:\Users\user\.tomcat_idea\test-tomcat\test-tomcat-stop.bat
-Generate the start script file: C:\Users\user\.tomcat_idea\test-tomcat\test-tomcat-start.bat
-The file does not exist: C:\Users\user\.tomcat_idea\test-tomcat\test-tomcat-start.bat
-Write to file: C:\Users\user\.tomcat_idea\test-tomcat\test-tomcat-start.bat
+appName参数值: test-tomcat
+contextPath参数值: test-tomcat
+arg4Tomcat参数值: -DtestValue=aaabbbccc -Dlog.home=E:\desktop\log-test
+tomcatDir参数值: C:\program\apache-tomcat-7.0.55
+instanceDir参数值: C:\Users\user\.tomcat_idea
+当前路径: E:\IDEA-IC-Tomcat
+当前应用使用的Tomcat实例目录: C:\Users\user\.tomcat_idea\test-tomcat
+生成Web应用所需文件
+生成Web应用所需文件-完成
+判断是否需要创建Tomcat实例
+创建Tomcat实例
+文件不存在: C:\Users\user\.tomcat_idea\test-tomcat\conf\Catalina\localhost\test-tomcat.xml
+写入文件: C:\Users\user\.tomcat_idea\test-tomcat\conf\Catalina\localhost\test-tomcat.xml
+生成bat停止脚本文件: C:\Users\user\.tomcat_idea\test-tomcat\test-tomcat-stop.bat
+文件不存在: C:\Users\user\.tomcat_idea\test-tomcat\test-tomcat-stop.bat
+写入文件: C:\Users\user\.tomcat_idea\test-tomcat\test-tomcat-stop.bat
+生成bat启动脚本文件: C:\Users\user\.tomcat_idea\test-tomcat\test-tomcat-start.bat
+文件不存在: C:\Users\user\.tomcat_idea\test-tomcat\test-tomcat-start.bat
+写入文件: C:\Users\user\.tomcat_idea\test-tomcat\test-tomcat-start.bat
 ```
 
-When the above Gradle script is successfully executed, Tomcat will be started, and the Tomcat process will generate a separate command line window.
+当以上Gradle脚本执行成功后，会启动Tomcat，Tomcat进程会产生单独的命令行窗口。
 
 ![pic](pic/a15.jpg)
 
-Use a browser to access the Controller of the sample project. The URL is "http://localhost: 8080/test-tomcat/testrest/get". The output is the current timestamp and the JVM parameter value corresponding to "testValue". The access result is shown below. :
+使用浏览器访问示例工程的Controller，URL为“ http://localhost:8080/test-tomcat/testrest/get ”，输出结果为当前时间戳及“testValue”对应的JVM参数值，访问结果如下所示：
 
 ![pic](pic/a16.jpg)
 
-#### 3.5.3.2. Use the Tomcat instance startup script to start the Tomcat process
+#### 3.5.3.2. 使用Tomcat实例启动脚本启动Tomcat进程
 
-When the "startTomcat" task of the runTomcat.gradle script is executed, a startup script is generated in the Tomcat instance directory corresponding to the current web application. For example, the output "C:\Users\user\\. tomcat_idea\test-tomcat\test-tomcat" -start.bat ".
+runTomcat.gradle脚本的“startTomcat”任务执行时，会在当前Web应用对应的Tomcat实例目录生成启动脚本，如前文输出的示例“C:\Users\user\\.tomcat_idea\test-tomcat\test-tomcat-start.bat”。
 
-When the web application does not need to be recompiled, the above startup script can be directly executed to start the Tomcat process and load the web application.
+当不需要对Web应用重新编译时，可以直接执行上述启动脚本，启动Tomcat进程，加载Web应用。
 
-#### 3.5.3.3. Stop the Tomcat process
+#### 3.5.3.3. 停止Tomcat进程
 
-In the example project, the TestPostConstructLazyFalse.preDestroy () method uses the @PreDestroy annotation. This method will be executed during the application stop phase, and a directory named "preDestroy-" and a current timestamp will be generated in the current directory.
+在示例工程中，TestPostConstructLazyFalse.preDestroy()方法使用了@PreDestroy注解，该方法会在应用停止阶段执行，会在当前目录生成名称为“preDestroy-”及当前时间戳的目录。
 
-##### 3.5.3.3.1. Close the Tomcat window directly (the application instance cannot receive the web container destruction notification)
+##### 3.5.3.3.1. 直接关闭Tomcat窗口（应用实例无法接收到Web容器销毁通知）
 
-Close the Tomcat window to stop the Tomcat process.
+将Tomcat窗口关闭，可以停止Tomcat进程。
 
-Stopping the Tomcat process by this method will cause the Tomcat process to end directly. The application instance cannot receive the Web container destruction notification. The TestPostConstructLazyFalse.preDestroy () method of the sample project will not be executed, and the current directory will not generate a directory.
+通过该方法停止Tomcat进程，会使Tomcat进程直接结束，应用实例无法接收到Web容器销毁通知，示例工程的TestPostConstructLazyFalse.preDestroy()方法不会执行，当前目录不会生成目录。
 
-##### 3.5.3.3.2. Use the Tomcat instance stop script to stop the Tomcat process (the application instance can receive the web container destruction notification)
+##### 3.5.3.3.2. 使用Tomcat实例停止脚本停止Tomcat进程（应用实例可以接收到Web容器销毁通知）
 
-When the "startTomcat" task of the runTomcat.gradle script is executed, a stop script is generated in the Tomcat instance directory corresponding to the current web application. For example, the output "C:\Users\user\\. tomcat_idea\test-tomcat\test-tomcat" -stop.bat ".
+runTomcat.gradle脚本的“startTomcat”任务执行时，会在当前Web应用对应的Tomcat实例目录生成停止脚本，如前文输出的示例“C:\Users\user\\.tomcat_idea\test-tomcat\test-tomcat-stop.bat”。
 
-Executing the above stop script will execute the stop command provided by Tomcat, which can stop the Tomcat process, the application instance can receive the Web container destruction notification, the TestPostConstructLazyFalse.preDestroy () method of the sample project will be executed, and the current directory will generate a directory, as shown below.
+执行上述停止脚本，会执行Tomcat提供的stop命令，可以停止Tomcat进程，应用实例可以接收到Web容器销毁通知，示例工程的TestPostConstructLazyFalse.preDestroy()方法会执行，当前目录会生成目录，如下所示。
 
 ![pic](pic/a17.jpg)
 
-#### 3.5.3.4. Debug Web Application
+#### 3.5.3.4. 调试Web应用
 
-For the process of creating remote debugging configuration and obtaining debugging parameters in IDEA, please refer to the corresponding content in the previous article.
+以下在IDEA创建远程调试配置并获取调试参数的过程，可以参考前文对应内容。
 
-##### 3.5.3.4.1. Debugging after process startup
+##### 3.5.3.4.1. 进程启动后调试
 
-- Start Tomcat process
+- 启动Tomcat进程
 
-The debugging parameters obtained are as follows:
-
-```gradle
--agentlib: jdwp = transport = dt_socket, server = y, suspend = n, address = 5555
-```
-
-When executing the Gradle "startTomcat" task, add the above parameters to the arg4Tomcat parameter (can be added to the Gradle configuration of "Run/Debug Configurations" in IDEA) as follows:
+获取到调试参数如下所示：
 
 ```gradle
-gradlew -DappName = test-tomcat
--Darg4Tomcat = "-DtestValue = aaabbbccc -Dlog.home = E:\desktop\log-test -agentlib: jdwp = transport = dt_socket, server = y, suspend = n, address = 5555"
+-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5555
 ```
 
-After executing the above Gradle command, start the Tomcat process.
+在执行Gradle “startTomcat”任务时，添加以上参数至arg4Tomcat参数中（可添加到IDEA的“Run/Debug Configurations”的Gradle配置中），如下所示：
 
-- Start IDEA debugging
+```gradle
+gradlew -DappName=test-tomcat
+-Darg4Tomcat="-DtestValue=aaabbbccc -Dlog.home=E:\desktop\log-test -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5555"
+```
 
-You can then start debugging in IDEA.
+执行以上Gradle命令后，启动Tomcat进程。
 
-Set a breakpoint for the TestRestController.get () method corresponding to the URI "/testrest/get". After accessing it through the browser, the IDEA debugger enters the breakpoint and can be viewed in the "Debug" "Debugger" window.
+- 启动IDEA调试
+
+之后可以在IDEA中启动调试。
+
+对URI“/testrest/get”对应的TestRestController.get()方法设置断点，通过浏览器访问后，IDEA调试器进入断点，可在“Debug”“Debugger”窗口查看。
 
 ![pic](pic/a18.jpg)
 
-##### 3.5.3.4.2. Debugging from process startup (two operations)
+##### 3.5.3.4.2. 从进程启动开始调试（操作两次）
 
-The value of the suspend parameter in the debugging parameters used above is "n". The process being debugged will not suspend the thread when it starts, and will start normally. It only supports starting the debugged process before debugging.
+以上使用的调试参数中的suspend参数值为“n”，被调试的进程在启动时不会暂停线程，会正常启动。只支持先启动被调试进程，再进行调试。
 
-When you need to start debugging from the process start, you need to set the value of the suspend parameter in the debugging parameters to "y". The debugged process will suspend the thread when it starts and wait for the debugger to connect to the port specified by address before it will continue to start.
+当需要从进程启动开始调试时，需要将调试参数中的suspend参数值设为“y”，被调试的进程在启动时会暂停线程，等待调试器连接address指定的端口后，才会继续启动。
 
-- Start Tomcat process
+- 启动Tomcat进程
 
-When you need to start debugging from the process start, examples of debugging parameters are as follows.
+当需要从进程启动开始调试时，调试参数示例如下。
 
 ```gradle
--agentlib: jdwp = transport = dt_socket, server = y, suspend = y, address = 5555
+-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5555
 ```
 
-Set the "suspend" parameter configured in the "arg4Tomcat" parameter of the Gradle task "startTomcat" to "y", and then use this command to start Tomcat. The Tomcat window only displays "Listening for transport dt_socket at address: 5555". No other content is displayed. That is, the Tomcat process is waiting for the debugger to connect to the port corresponding to the address parameter, and the startup is not completed.
+将Gradle任务“startTomcat”的“arg4Tomcat”参数中配置的“suspend”参数设置为“y”，再通过该命令启动Tomcat，Tomcat窗口只显示“Listening for transport dt_socket at address: 5555”，未显示其他内容，即Tomcat进程此时在等待调试器连接address参数对应的端口，未完成启动。
 
 ![pic](pic/a19.jpg)
 
-- Start IDEA debugging
+- 启动IDEA调试
 
-The code that will be executed during the Web application initialization phase sets a breakpoint, for example, the TestPostConstructLazyFalse.postConstruct () method with the @PostConstruct annotation in the sample project sets a breakpoint.
+在Web应用初始化阶段会执行的代码设置断点，例如在示例工程的带有@PostConstruct注解的TestPostConstructLazyFalse.postConstruct()方法设置断点。
 
-Start debugging in IDEA and check that the Tomcat window log is updated, indicating that the Tomcat process has started.
+在IDEA启动调试，查看Tomcat窗口日志已更新，说明Tomcat进程已启动。
 
-Looking at the IDEA debugging window, the breakpoints set above have been entered, which proves that debugging can be started from the start of the Web application.
+查看IDEA调试窗口，已进入以上设置的断点，证明可以从Web应用启动开始调试。
 
 ![pic](pic/a20.jpg)
 
-##### 3.5.3.4.3. Start debugging from process startup (one-click completion)
+##### 3.5.3.4.3. 从进程启动开始调试（一键完成）
 
-The above operations starting from the process startup need to start the Tomcat process first, and then start IDEA debugging, which can be optimized to complete in one click.
+以上从进程启动开始调试的操作需要先启动Tomcat进程，再启动IDEA调试，可以优化为一键完成。
 
-Open IDEA's "Run/Debug Configurations" window, select "Remote" configuration, click the plus button under "Before launch: Activate tool window", and select "Run Gradle task".
+打开IDEA的“Run/Debug Configurations”窗口，选择“Remote”配置，点击“Before launch: Activate tool window”下方的加号按钮，选择“Run Gradle task”。
 
 ![pic](pic/a21.jpg)
 
-The "Select Gradle Task" window pops up, "Gradle project", "Tasks", and "VM options" parameter configuration, please refer to the steps to add Gradle configuration in IDEA, start the Tomcat process through the "startTomcat" task, you need to ensure that the "VM options" parameter is filled in The debug parameter "suspend" in the "arg4Tomcat" parameter is "y".
+弹出“Select Gradle Task”窗口，“Gradle project”“Tasks”“VM options”参数配置，可参考在IDEA添加Gradle配置，通过“startTomcat”任务启动Tomcat进程的步骤，需要确保“VM options”参数填写的“arg4Tomcat”参数中的调试参数“suspend”为“y”。
 
 ![pic](pic/a22.jpg)
 
-The configured Gradle task appears in the list under "Before launch: Activate tool window".
+“Before launch: Activate tool window”下方的列表会出现配置的Gradle任务。
 
 ![pic](pic/a23.jpg)
 
-After completing the above configuration, before starting IDEA debugging, the specified Gradle task "startTomcat" will be executed, and the Tomcat process will be started with the debugging parameter "suspend = y". One-click debugging can be implemented from the start of the process, which is similar to the IDEA Ultimate or Eclipse debugging of web applications from the start.
+完成以上配置后，在启动IDEA调试之前，会执行指定的Gradle任务“startTomcat”，以“suspend=y”的调试参数启动Tomcat进程。可以实现一键从进程启动开始调试，与IDEA Ultimate版或Eclipse对Web应用从启动开始调试的效果类似。
 
-##### 3.5.3.4.4. Debugging Tomcat Classes
+##### 3.5.3.4.4. 调试Tomcat的类
 
-When you need to debug Tomcat's classes, you need to add the Tomcat's lib directory to the IDEA's web application project dependency, otherwise you cannot view the Tomcat's classes during debugging.
+当需要对Tomcat的类进行调试时，需要将Tomcat的lib目录添加至IDEA的Web应用工程的依赖中，否则调试时无法查看Tomcat的类。
 
-Open IDEA's "Project Structure" window, select "Project Settings" "Modules" tab, select the main Web project module in the window that opens, select the "Dependencies" tab, click the plus button, and select "JARs or directories .. ."menu.
+打开IDEA的“Project Structure”窗口，选择“Project Settings”“Modules”标签页，在打开的窗口中选择Web项目主模块，选择“Dependencies”标签页，点击加号按钮，选择“JARs or directories...”菜单。
 
 ![pic](pic/a24.jpg)
 
-In the pop-up window, select the lib directory of the current Tomcat installation directory.
+在弹出的窗口，选择当前使用的Tomcat的安装目录的lib目录。
 
 ![pic](pic/a25.jpg)
 
-After adding, Tomcat's lib directory will appear at the bottom of the "Dependencies" tab.
+完成添加后，Tomcat的lib目录会出现在“Dependencies”标签页的最下方。
 
 ![pic](pic/a26.jpg)
 
-When Gradle is refreshed, the project configuration will be reset, and the dependencies added above will be cleaned up and need to be added again.
+当刷新Gradle后，项目配置会重置，以上添加的依赖会被清理，需要重新添加。
 
-After completing the above configuration, set a breakpoint in Tomcat's org.apache.catalina.startup.HostConfig $ DeployDescriptor class run method. Start debugging from the process startup. You can see that the breakpoint has been entered in the IDEA Debug window. This method is the first Tomcat class method executed when Tomcat starts.
+完成以上配置后，在Tomcat的org.apache.catalina.startup.HostConfig$DeployDescriptor类run方法设置断点，从进程启动开始调试，可以在IDEA的Debug窗口看到已进入断点。该方法是Tomcat启动时执行的第一个Tomcat的类的方法。
 
 ![pic](pic/a27.jpg)
 
-## 3.6. Other instructions
+## 3.6. 其他说明
 
-- Generate file adjustments for web applications
+- 生成Web应用所需文件调整
 
-The buildFiles4WebApp method in the runTomcat.gradle script is used to generate the files required by the web application. The copied directories and files can be adjusted according to the actual situation.
+runTomcat.gradle脚本中buildFiles4WebApp方法用于生成Web应用所需文件，拷贝的目录与文件可以根据实际情况调整。
 
-- Debug port needs to ensure that it is not listening
+- 调试端口需要确保未被监听
 
-The debug port corresponding to the adderss parameter specified in the debug parameters of the debugged Java process needs to be ensured that it is not monitored, otherwise the debugged Java process will fail to start and the window will automatically disappear. The Tomcat prompt is as follows.
+被调试Java进程的调试参数中指定的adderss参数对应的调试端口，需要确保未被监听，否则被调试Java进程会启动失败，窗口会自动消失，Tomcat的提示如下。
 
 ![pic](pic/a28.jpg)
 
-- Recreate Tomcat instance
+- 重新创建Tomcat实例
 
-When you need to modify the Tomcat version used, or for other reasons, you need to re-create the Tomcat instance used by the web application, you need to delete the corresponding Tomcat instance directory, such as "C:\Users\user\.tomcat_idea\test-tomcat" , And then execute Gradle's startTomcat task.
+当因为需要修改使用的Tomcat版本，或其他原因，导致需要重新创建Web应用使用的Tomcat实例时，需要将对应的Tomcat实例目录删除，如“C:\Users\user\.tomcat_idea\test-tomcat”，之后再执行Gradle的startTomcat任务。
 
-- Tomcat instance directory configuration modification and log viewing
+- Tomcat实例目录配置修改与日志查看
 
-The Tomcat instance directory corresponding to the current web application will be output during the Gradle "startTomcat" task, such as "C:\Users\user\.tomcat_idea\test-tomcat"
+当前Web应用对应的Tomcat实例目录，在执行Gradle “startTomcat”任务时会输出，如“C:\Users\user\.tomcat_idea\test-tomcat”。
 
-When you need to modify the parameters such as the HTTP service port, SSL configuration, and number of thread pools used by Tomcat corresponding to the current web application, you can modify the "conf\server.xml" file in the Tomcat instance directory. The description is omitted.
+当需要修改当前Web应用对应的Tomcat使用的HTTP服务端口、SSL配置、线程池数量等参数时，可以修改Tomcat实例目录的“conf\server.xml”文件，说明略。
 
-When you need to start multiple Tomcat processes at the same time to load different web applications, you need to modify the listening port in the "conf\server.xml" file of the corresponding Tomcat instance to prevent different Tomcat instances from using the same port and unavailable.
+当需要同时启动多个Tomcat进程分别加载不同的Web应用时，需要先修改对应Tomcat实例的“conf\server.xml”文件中的监听端口，避免不同的Tomcat实例使用同一个端口导致不可用。
 
-The "logs" directory of the Tomcat instance directory stores Tomcat log files. When the default configuration is used, it includes "catalina.log", "localhost.log", "localhost_access_log.txt", "host-manager.log", "manager.log", and so on.
+Tomcat实例目录的“logs”目录保存了Tomcat日志文件，使用默认配置时，包括“catalina.log”“localhost.log”“localhost_access_log.txt”“host-manager.log”“manager.log”等。
 
-## 3.7. Principles
+## 3.7. 原理说明
 
-Use the runTomcat.gradle script to start the Tomcat process and load the web application. The principle is similar to Eclipse or IDEA Ultimate (2018.3 and earlier versions), as shown below.
+通过runTomcat.gradle脚本启动Tomcat进程并加载Web应用，与Eclipse或IDEA Ultimate（2018.3及之前版本）的原理类似，如下所示。
 
-### 3.7.1. Generating Files for Web Applications
+### 3.7.1. 生成Web应用所需文件
 
-When the noBuild parameter is not specified or is empty, Gradle's classes tasks will be executed to complete the compilation, and then the buildFiles4WebApp method will be executed to complete the following operations:
+当noBuild参数未指定或为空时，会先执行Gradle的classes任务完成编译，再执行buildFiles4WebApp方法，完成以下操作：
 
-- Copy the compiled class files to the "build/tomcat/WEB-INF/classes" directory
-- Copy the "src/main/resources/" directory (configuration file) to the "build/tomcat/WEB-INF/classes" directory
-- Copy the "src/main/webapp/" directory (static resources and WEB-INF/web.xml file) to the "build/tomcat" directory
-- Copy the dependent jar packages to the "build/tomcat/WEB-INF/lib" directory
+- 将编译生成的class文件拷贝至“build/tomcat/WEB-INF/classes”目录中
+- 将“src/main/resources/”目录（配置文件）拷贝至“build/tomcat/WEB-INF/classes”目录中
+- 将“src/main/webapp/”目录（静态资源与WEB-INF/web.xml文件）拷贝至“build/tomcat”目录中
+- 将依赖的jar包拷贝至“build/tomcat/WEB-INF/lib”目录中
 
-### 3.7.2. Generate Tomcat instance
+### 3.7.2. 生成Tomcat实例
 
-Determine whether the Tomcat instance directory used by the current application already exists. If it does, it will not be processed.
+判断当前应用使用的Tomcat实例目录是否已存在，若已存在时则不再处理。
 
-When the Tomcat instance directory used by the current application does not exist, perform the following operations to generate a Tomcat instance:
+当前应用使用的Tomcat实例目录不存在时，进行以下操作生成Tomcat实例：
 
-- In the directory corresponding to the "TOMCAT_INSTANCE_4IDEA" environment variable parameter value or the ".tomcat_idea" directory of the current user directory, create a Tomcat instance directory for the current web application, and use the "appName" parameter value when the Gradle "startTomcat" task is executed Directory name
-- Copy the bin and conf directories of the Tomcat installation directory specified by the "TOMCAT_HOME_4IDEA" environment variable parameter value to the Tomcat instance directory used by the current web application;
-- Create logs, temp, and work directories in the Tomcat instance directory used by the current web application.
+- 在“TOMCAT_INSTANCE_4IDEA”环境变量参数值对应的目录，或当前用户目录的“.tomcat_idea”目录中，创建当前Web应用使用的Tomcat实例目录，使用Gradle “startTomcat”任务执行时的“appName”参数值作为目录名称；
+- 将“TOMCAT_HOME_4IDEA”环境变量参数值指定的，需要使用的Tomcat安装目录的bin、conf目录拷贝至当前Web应用使用的Tomcat实例目录中；
+- 在当前Web应用使用的Tomcat实例目录创建logs、temp、work目录。
 
-### 3.7.3. Handling Tomcat context descriptor files
+### 3.7.3. 处理Tomcat上下文描述符文件
 
-A context descriptor is an XML file that contains context configuration related to Tomcat, such as naming resources or session manager configuration. When Tomcat starts, the context descriptor is deployed first. Refer to https://tomcat.apache.org/tomcat-7.0-doc/deployer-howto.html.
+上下文描述符是一个XML文件，其中包含与Tomcat相关的上下文配置，例如命名资源或会话管理器配置等。当Tomcat启动时，上下文描述符会被首先部署。可参考 https://tomcat.apache.org/tomcat-7.0-doc/deployer-howto.html 。
 
-The context descriptor needs to be saved in the "conf\Catalina\localhost" directory of the Tomcat instance directory used by the current web application. The context path of the current web application is the same as the context descriptor file name (without the .xml suffix) and the size of the context path The case is the same as the case of the file name.
+上下文描述符需要保存在当前Web应用使用的Tomcat实例目录的“conf\Catalina\localhost”目录中，当前Web应用的上下文路径与上下文描述符文件名相同（不含.xml后缀），上下文路径的大小写与文件名的大小写一致。
 
-The runTomcat.gradle script checks the context descriptor of the Tomcat instance corresponding to the current web application. If the file already exists and the content does not need to be modified, the write operation is not performed. If the file does not exist or the file content needs to be modified, the file is written. operating.
+runTomcat.gradle脚本会检查当前Web应用对应的Tomcat实例的上下文描述符，若文件已存在且内容不需要修改，则不执行写入操作；若文件不存在或文件内容需要修改，则执行文件写入操作。
 
-### 3.7.4. Generate Tomcat instance start/stop scripts
+### 3.7.4. 生成Tomcat实例启动/停止脚本
 
-The Tomcat instance start/stop script will be saved in the Tomcat instance directory corresponding to the current web application.
+Tomcat实例启动/停止脚本会保存在当前Web应用对应的Tomcat实例目录中。
 
-The runTomcat.gradle script will check the corresponding script file and perform the write operation when it needs to be written.
+runTomcat.gradle脚本会检查对应的脚本文件，在需要写入时进行写入操作。
 
-The "bin\startup.bat" script of the Tomcat instance directory is called in the startup script; the "bin\shutdown.bat" script of the Tomcat instance directory is called in the stop script.
+在启动脚本中会调用Tomcat实例目录的“bin\startup.bat”脚本；在停止脚本中会调用Tomcat实例目录的“bin\shutdown.bat”脚本。
 
-### 3.7.5. Start Tomcat
+### 3.7.5. 启动Tomcat
 
-The runTomcat.gradle script will execute the generated Tomcat instance startup script to start Tomcat.
+runTomcat.gradle脚本会执行生成的Tomcat实例启动脚本，以启动Tomcat。
 
-### 3.7.6. Debugging Web Applications
+### 3.7.6. 调试Web应用
 
-The above remote debugging uses JDWP (Java Debug Wire Protocol), refer to https://docs.oracle.com/javase/8/docs/technotes/guides/jpda/jdwp-spec.html, JDWP is used for debugger The communication protocol between the Java virtual machine and the Java virtual machine that it is debugging.
+以上的远程调试使用了JDWP（Java Debug Wire Protocol），可参考 https://docs.oracle.com/javase/8/docs/technotes/guides/jpda/jdwp-spec.html ，JDWP是用于调试器与其调试的Java虚拟机之间的通信协议。
 
-JPDA (The Java Platform Debugger Architecture) contains three interfaces for the debugger to use in the development environment of the desktop system. JDWP is one of them, and the description of JPDA can refer to https://docs.oracle.com/javase/8/docs/technotes/guides/jpda/.
+JPDA（The Java Platform Debugger Architecture）包含三个接口，供调试器在桌面系统的开发环境中使用。JDWP属于其中一个，JPDA的说明可参考 https://docs.oracle.com/javase/8/docs/technotes/guides/jpda/ 。
 
-In JPDA connection and call details (https://docs.oracle.com/javase/8/docs/technotes/guides/jpda/conninv.html), it is stated that when the suspend parameter is "y", VMStartEvent will use SUSPEND_ALL As a suspend strategy; when the suspend parameter is "n", VMStartEvent uses SUSPEND_NONE as the suspend strategy.
+在JPDA连接和调用详细信息（https://docs.oracle.com/javase/8/docs/technotes/guides/jpda/conninv.html ）中，说明当suspend参数为“y”时，VMStartEvent会使用SUSPEND_ALL作为暂停策略；当suspend参数为“n”时，VMStartEvent会使用SUSPEND_NONE作为暂停策略。
 
-Refer to https://docs.oracle.com/javase/8/docs/jdk/api/jpda/jdi/com/sun/jdi/event/VMStartEvent.html to explain that VMStartEvent is the initialization notification of the target VM. When starting the main thread, You receive this event before and before any application code is executed.
+参考 https://docs.oracle.com/javase/8/docs/jdk/api/jpda/jdi/com/sun/jdi/event/VMStartEvent.html ，说明VMStartEvent是目标VM的初始化通知，在启动主线程之前和执行任何应用程序代码之前，会收到此事件。
 
-Refer to https://docs.oracle.com/javase/8/docs/jdk/api/jpda/jdi/com/sun/jdi/request/EventRequest.html to explain that SUSPEND_ALL will suspend all threads when an event occurs; SUSPEND_NONE in The thread is not suspended when an event occurs.
+参考 https://docs.oracle.com/javase/8/docs/jdk/api/jpda/jdi/com/sun/jdi/request/EventRequest.html ，说明SUSPEND_ALL在事件发生时会暂停全部线程；SUSPEND_NONE在事件发生时不会暂停线程。
 
-According to the above description, when the suspend parameter in the debugging parameters of the Java process is "y", all threads are temporarily suspended at startup; when the suspend parameter is "n", threads are not temporarily suspended at startup.
-
-[1]: https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/README-cn.md
+根据以上说明可知，当Java进程的调试参数中的suspend参数为“y”时，在启动时会暂时全部线程；suspend参数为“n”时，在启动时不会暂时线程。
