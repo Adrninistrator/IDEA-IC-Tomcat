@@ -1,55 +1,25 @@
-﻿[English version](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/README-en.md)
+﻿# 1. 前言
 
-```
-目录
+IntelliJ IDEA Community Edition（社区版）不支持Tomcat，如果不想花钱购买Ultimate版本，也不想使用Eclipse，可以尝试通过以下方式使IDEA社区版支持Tomcat。
 
-1. 前言
-2. 尝试的方法
-    2.1. Smart Tomcat插件
-3. 可行方法
-    3.1. 说明
-    3.2. 依赖环境
-    3.3. IDEA中执行Gradle脚本
-        3.3.1. 在Terminal中执行
-        3.3.2. 在Run/Debug Configurations中执行
-            3.3.2.1. 解决在Run/Debug Configurations中执行Gradle脚本中文乱码问题
-    3.4. 在IDEA中进行远程调试
-        3.4.1. 在IDEA创建远程调试配置并获取调试参数
-        3.4.2. 增加调试参数后启动被调试Java进程
-        3.4.3. 在IDEA启动调试
-    3.5. runTomcat.gradle脚本使用方法
-        3.5.1. 任务及参数说明
-            3.5.1.1. 环境变量
-            3.5.1.2. JVM参数
-        3.5.2. 环境配置
-        3.5.3. 使用场景
-            3.5.3.1. 正常启动Tomcat进程
-            3.5.3.2. 使用Tomcat实例启动脚本启动Tomcat进程
-            3.5.3.3. 停止Tomcat进程
-                3.5.3.3.1. 直接关闭Tomcat窗口（应用实例无法接收到Web容器销毁通知）
-                3.5.3.3.2. 使用Tomcat实例停止脚本停止Tomcat进程（应用实例可以接收到Web容器销毁通知）
-            3.5.3.4. 调试Web应用
-                3.5.3.4.1. 进程启动后调试
-                3.5.3.4.2. 从进程启动开始调试（操作两次）
-                3.5.3.4.3. 从进程启动开始调试（一键完成）
-                3.5.3.4.4. 调试Tomcat的类
-    3.6. 其他说明
-    3.7. 原理说明
-        3.7.1. 生成Web应用所需文件
-        3.7.2. 生成Tomcat实例
-        3.7.3. 处理Tomcat上下文描述符文件
-        3.7.4. 生成Tomcat实例启动/停止脚本
-        3.7.5. 启动Tomcat
-        3.7.6. 调试Web应用
+# 2. 快速开始
+
+设置环境变量TOMCAT_HOME_4IDEA，指定需要使用的Tomcat的安装目录，例如“C:\program\apache-tomcat-7.0.79”。
+
+下载 https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/runTomcat.gradle 脚本，拷贝至Java Web应用工程中，在build.gradle脚本中添加“apply from: 'runTomcat.gradle'”。
+
+执行以下Gradle脚本，即可启动Tomcat进程并加载对应的应用。
+
+```gradle
+gradlew startTomcat -DappName=test-tomcat -Darg4Tomcat="-DtestValue=aaabbbccc -Dlog.home=E:\desktop\log-test"
 ```
 
-# 1. 前言
+- appName参数用于指定应用名称及访问路径；
+- arg4Tomcat参数用于指定应用的JVM启动参数，需要使用半角双引号包含。
 
-IntelliJ IDEA Community Edition（社区版）不支持Tomcat，不想花钱购买Ultimate版本，也不想使用Eclipse，尝试通过其他方式使IDEA社区版支持Tomcat。
+# 3. 尝试的方法
 
-# 2. 尝试的方法
-
-## 2.1. Smart Tomcat插件
+## 3.1. Smart Tomcat插件
 
 在IDEA社区版（2019.2.4）中安装了Smart Tomcat插件，并使用其启动Tomcat应用，遇到了以下问题：
 
@@ -58,9 +28,9 @@ IntelliJ IDEA Community Edition（社区版）不支持Tomcat，不想花钱购�
 
 使用Smart Tomcat插件遇到问题之后，放弃了使用该插件，没有再去分析是否因为使用方法不当。
 
-# 3. 可行方法
+# 4. 可行方法
 
-## 3.1. 说明
+## 4.1. 说明
 
 之后通过Gradle脚本，使IDEA社区版支持Tomcat（也支持IDEA Ultimate版）。
 
@@ -73,7 +43,7 @@ IntelliJ IDEA Community Edition（社区版）不支持Tomcat，不想花钱购�
 - 一键启动可调试的Tomcat（Web应用）
 - 一键从Tomcat（Web应用）启动时开始调试
 
-## 3.2. 依赖环境
+## 4.2. 依赖环境
 
 - IDEA
 
@@ -95,7 +65,7 @@ IntelliJ IDEA Community Edition（社区版）不支持Tomcat，不想花钱购�
 
 使用Windows 7 x64 SP1版本。
 
-## 3.3. IDEA中执行Gradle脚本
+## 4.3. IDEA中执行Gradle脚本
 
 假设存在以下Gradle任务：
 
@@ -107,7 +77,7 @@ task testTask {
 }
 ```
 
-### 3.3.1. 在Terminal中执行
+### 4.3.1. 在Terminal中执行
 
 在IDEA的Terminal中执行以上Gradle任务时，可以通过gradle或gradlew命令，以命令行的方式执行，并可以通过“-D”前缀指定传递给Gradle脚本的JVM参数，与执行Java程序时类似。
 
@@ -125,7 +95,7 @@ gradlew testTask -Darg=abc
 测试-abc
 ```
 
-### 3.3.2. 在Run/Debug Configurations中执行
+### 4.3.2. 在Run/Debug Configurations中执行
 
 打开IDEA的“Run/Debug Configurations”窗口，点击加号后，从弹出菜单中选择“Gradle”，可以新增一个配置，用于执行对应的Gradle任务。
 
@@ -154,7 +124,7 @@ gradlew testTask -Darg=abc
 ![pic](pic/a05.jpg)
 
 
-#### 3.3.2.1. 解决在Run/Debug Configurations中执行Gradle脚本中文乱码问题
+#### 4.3.2.1. 解决在Run/Debug Configurations中执行Gradle脚本中文乱码问题
 
 在Run/Debug Configurations中执行Gradle脚本或编译过程时，输出的中文可能乱码。
 
@@ -176,9 +146,9 @@ gradlew testTask -Darg=abc
 
 - 重启已打开的IDEA后生效。
 
-## 3.4. 在IDEA中进行远程调试
+## 4.4. 在IDEA中进行远程调试
 
-### 3.4.1. 在IDEA创建远程调试配置并获取调试参数
+### 4.4.1. 在IDEA创建远程调试配置并获取调试参数
 
 打开IDEA的“Run/Debug Configurations”窗口，点击加号后，从弹出菜单中选择“Remote”，可以新增一个配置，用于进行远程调试。
 
@@ -199,13 +169,13 @@ gradlew testTask -Darg=abc
 - “Transport”选项“Socket”对应调试参数“transport=dt_socket”
 - “Port”参数对应调试参数“address=”
 
-### 3.4.2. 增加调试参数后启动被调试Java进程
+### 4.4.2. 增加调试参数后启动被调试Java进程
 
 复制“Command line arguments for remote JVM”对应的调试参数，将其添加到被调试Java进程的JVM参数中，启动Java进程。
 
 **需要注意，IDEA调试配置中的Port参数，与被调试Java进程使用的调试参数中的address参数值需要相同，即调试器连接的端口需要与被调试Java进程监听的端口一致。**
 
-### 3.4.3. 在IDEA启动调试
+### 4.4.3. 在IDEA启动调试
 
 选中对应的远程调试配置，点击调试按钮开始调试，与使用IDEA启动Java进程并调试类似。
 
@@ -227,17 +197,17 @@ gradlew testTask -Darg=abc
 
 以上调试方法也支持非Web应用，以及远程的Java进程。
 
-## 3.5. runTomcat.gradle脚本使用方法
+## 4.5. runTomcat.gradle脚本使用方法
 
 将runTomcat.gradle脚本拷贝至Java Web应用工程中，在build.gradle脚本中添加“apply from: 'runTomcat.gradle'”。
 
-### 3.5.1. 任务及参数说明
+### 4.5.1. 任务及参数说明
 
 runTomcat.gradle脚本中提供了名称为“startTomcat”的任务，用于启动Tomcat并加载Web应用。
 
 在脚本中使用了以下参数。
 
-#### 3.5.1.1. 环境变量
+#### 4.5.1.1. 环境变量
 
 - TOMCAT_HOME_4IDEA
 
@@ -257,7 +227,7 @@ runTomcat.gradle脚本中提供了名称为“startTomcat”的任务，用于�
 |必须设置|否|
 |说明|默认使用当前用户目录的“.tomcat_idea”目录。例如为“C:\Users\user\.tomcat_idea”目录，在该目录中保存了各应用对应的Tomcat实例，各实例分别对应其中的一个目录|
 
-#### 3.5.1.2. JVM参数
+#### 4.5.1.2. JVM参数
 
 - appName
   
@@ -294,7 +264,7 @@ runTomcat.gradle脚本中提供了名称为“startTomcat”的任务，用于�
 |必须设置|否|
 |说明|***需要使用半角双引号包含全部的参数，否则会被空格截断***。可以指定jdwp调试参数|
 
-### 3.5.2. 环境配置
+### 4.5.2. 环境配置
 
 在使用提供的Gradle脚本runTomcat.gradle时，首先需要完成环境配置，“TOMCAT_HOME_4IDEA”环境变量配置需要增加，“TOMCAT_INSTANCE_4IDEA”环境变量的配置可选。
 
@@ -302,9 +272,9 @@ runTomcat.gradle脚本中提供了名称为“startTomcat”的任务，用于�
 
 为了验证环境变量配置是否已生效，可在IDEA的Terminal中执行“echo %TOMCAT_HOME_4IDEA%”，当配置完成时会输出对应的环境变量值，未配置或未生效时会输出“%TOMCAT_HOME_4IDEA%”。
 
-### 3.5.3. 使用场景
+### 4.5.3. 使用场景
 
-#### 3.5.3.1. 正常启动Tomcat进程
+#### 4.5.3.1. 正常启动Tomcat进程
 
 正常启动Tomcat进程，加载示例工程中的Web应用的Gradle命令如下所示：
 
@@ -355,23 +325,23 @@ instanceDir参数值: C:\Users\user\.tomcat_idea
 
 ![pic](pic/a16.jpg)
 
-#### 3.5.3.2. 使用Tomcat实例启动脚本启动Tomcat进程
+#### 4.5.3.2. 使用Tomcat实例启动脚本启动Tomcat进程
 
 runTomcat.gradle脚本的“startTomcat”任务执行时，会在当前Web应用对应的Tomcat实例目录生成启动脚本，如前文输出的示例“C:\Users\user\\.tomcat_idea\test-tomcat\test-tomcat-start.bat”。
 
 当不需要对Web应用重新编译时，可以直接执行上述启动脚本，启动Tomcat进程，加载Web应用。
 
-#### 3.5.3.3. 停止Tomcat进程
+#### 4.5.3.3. 停止Tomcat进程
 
 在示例工程中，TestPostConstructLazyFalse.preDestroy()方法使用了@PreDestroy注解，该方法会在应用停止阶段执行，会在当前目录生成名称为“preDestroy-”及当前时间戳的目录。
 
-##### 3.5.3.3.1. 直接关闭Tomcat窗口（应用实例无法接收到Web容器销毁通知）
+##### 4.5.3.3.1. 直接关闭Tomcat窗口（应用实例无法接收到Web容器销毁通知）
 
 将Tomcat窗口关闭，可以停止Tomcat进程。
 
 通过该方法停止Tomcat进程，会使Tomcat进程直接结束，应用实例无法接收到Web容器销毁通知，示例工程的TestPostConstructLazyFalse.preDestroy()方法不会执行，当前目录不会生成目录。
 
-##### 3.5.3.3.2. 使用Tomcat实例停止脚本停止Tomcat进程（应用实例可以接收到Web容器销毁通知）
+##### 4.5.3.3.2. 使用Tomcat实例停止脚本停止Tomcat进程（应用实例可以接收到Web容器销毁通知）
 
 runTomcat.gradle脚本的“startTomcat”任务执行时，会在当前Web应用对应的Tomcat实例目录生成停止脚本，如前文输出的示例“C:\Users\user\\.tomcat_idea\test-tomcat\test-tomcat-stop.bat”。
 
@@ -379,11 +349,11 @@ runTomcat.gradle脚本的“startTomcat”任务执行时，会在当前Web应�
 
 ![pic](pic/a17.jpg)
 
-#### 3.5.3.4. 调试Web应用
+#### 4.5.3.4. 调试Web应用
 
 以下在IDEA创建远程调试配置并获取调试参数的过程，可以参考前文对应内容。
 
-##### 3.5.3.4.1. 进程启动后调试
+##### 4.5.3.4.1. 进程启动后调试
 
 - 启动Tomcat进程
 
@@ -410,7 +380,7 @@ gradlew -DappName=test-tomcat
 
 ![pic](pic/a18.jpg)
 
-##### 3.5.3.4.2. 从进程启动开始调试（操作两次）
+##### 4.5.3.4.2. 从进程启动开始调试（操作两次）
 
 以上使用的调试参数中的suspend参数值为“n”，被调试的进程在启动时不会暂停线程，会正常启动。只支持先启动被调试进程，再进行调试。
 
@@ -438,7 +408,7 @@ gradlew -DappName=test-tomcat
 
 ![pic](pic/a20.jpg)
 
-##### 3.5.3.4.3. 从进程启动开始调试（一键完成）
+##### 4.5.3.4.3. 从进程启动开始调试（一键完成）
 
 以上从进程启动开始调试的操作需要先启动Tomcat进程，再启动IDEA调试，可以优化为一键完成。
 
@@ -456,7 +426,7 @@ gradlew -DappName=test-tomcat
 
 完成以上配置后，在启动IDEA调试之前，会执行指定的Gradle任务“startTomcat”，以“suspend=y”的调试参数启动Tomcat进程。可以实现一键从进程启动开始调试，与IDEA Ultimate版或Eclipse对Web应用从启动开始调试的效果类似。
 
-##### 3.5.3.4.4. 调试Tomcat的类
+##### 4.5.3.4.4. 调试Tomcat的类
 
 当需要对Tomcat的类进行调试时，需要将Tomcat的lib目录添加至IDEA的Web应用工程的依赖中，否则调试时无法查看Tomcat的类。
 
@@ -478,7 +448,7 @@ gradlew -DappName=test-tomcat
 
 ![pic](pic/a27.jpg)
 
-## 3.6. 其他说明
+## 4.6. 其他说明
 
 - 生成Web应用所需文件调整
 
@@ -504,11 +474,11 @@ runTomcat.gradle脚本中buildFiles4WebApp方法用于生成Web应用所需文�
 
 Tomcat实例目录的“logs”目录保存了Tomcat日志文件，使用默认配置时，包括“catalina.log”“localhost.log”“localhost_access_log.txt”“host-manager.log”“manager.log”等。
 
-## 3.7. 原理说明
+## 4.7. 原理说明
 
 通过runTomcat.gradle脚本启动Tomcat进程并加载Web应用，与Eclipse或IDEA Ultimate（2018.3及之前版本）的原理类似，如下所示。
 
-### 3.7.1. 生成Web应用所需文件
+### 4.7.1. 生成Web应用所需文件
 
 当noBuild参数未指定或为空时，会先执行Gradle的classes任务完成编译，再执行buildFiles4WebApp方法，完成以下操作：
 
@@ -517,7 +487,7 @@ Tomcat实例目录的“logs”目录保存了Tomcat日志文件，使用默认�
 - 将“src/main/webapp/”目录（静态资源与WEB-INF/web.xml文件）拷贝至“build/tomcat”目录中
 - 将依赖的jar包拷贝至“build/tomcat/WEB-INF/lib”目录中
 
-### 3.7.2. 生成Tomcat实例
+### 4.7.2. 生成Tomcat实例
 
 判断当前应用使用的Tomcat实例目录是否已存在，若已存在时则不再处理。
 
@@ -527,7 +497,7 @@ Tomcat实例目录的“logs”目录保存了Tomcat日志文件，使用默认�
 - 将“TOMCAT_HOME_4IDEA”环境变量参数值指定的，需要使用的Tomcat安装目录的bin、conf目录拷贝至当前Web应用使用的Tomcat实例目录中；
 - 在当前Web应用使用的Tomcat实例目录创建logs、temp、work目录。
 
-### 3.7.3. 处理Tomcat上下文描述符文件
+### 4.7.3. 处理Tomcat上下文描述符文件
 
 上下文描述符是一个XML文件，其中包含与Tomcat相关的上下文配置，例如命名资源或会话管理器配置等。当Tomcat启动时，上下文描述符会被首先部署。可参考 https://tomcat.apache.org/tomcat-7.0-doc/deployer-howto.html 。
 
@@ -535,7 +505,7 @@ Tomcat实例目录的“logs”目录保存了Tomcat日志文件，使用默认�
 
 runTomcat.gradle脚本会检查当前Web应用对应的Tomcat实例的上下文描述符，若文件已存在且内容不需要修改，则不执行写入操作；若文件不存在或文件内容需要修改，则执行文件写入操作。
 
-### 3.7.4. 生成Tomcat实例启动/停止脚本
+### 4.7.4. 生成Tomcat实例启动/停止脚本
 
 Tomcat实例启动/停止脚本会保存在当前Web应用对应的Tomcat实例目录中。
 
@@ -543,11 +513,11 @@ runTomcat.gradle脚本会检查对应的脚本文件，在需要写入时进行�
 
 在启动脚本中会调用Tomcat实例目录的“bin\startup.bat”脚本；在停止脚本中会调用Tomcat实例目录的“bin\shutdown.bat”脚本。
 
-### 3.7.5. 启动Tomcat
+### 4.7.5. 启动Tomcat
 
 runTomcat.gradle脚本会执行生成的Tomcat实例启动脚本，以启动Tomcat。
 
-### 3.7.6. 调试Web应用
+### 4.7.6. 调试Web应用
 
 以上的远程调试使用了JDWP（Java Debug Wire Protocol），可参考 https://docs.oracle.com/javase/8/docs/technotes/guides/jpda/jdwp-spec.html ，JDWP是用于调试器与其调试的Java虚拟机之间的通信协议。
 
