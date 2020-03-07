@@ -95,7 +95,8 @@ void buildFiles4WebApp() {
         into file(tomcatBuildDir)
     }
     copy {
-        from configurations.compile
+        from configurations.runtimeClasspath
+        exclude "**/javax.servlet-api-**.jar"
         into file(tomcatBuildDir + "/WEB-INF/lib")
     }
 

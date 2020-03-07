@@ -20,7 +20,7 @@ configurations {
 
     implementation.exclude module: 'slf4j-log4j12'
     implementation.exclude module: 'log4j'
-    implementation.exclude module: 'commons-logging'    
+    implementation.exclude module: 'commons-logging'
     implementation.exclude module: 'jsp-api'
 }
 
@@ -51,10 +51,19 @@ clean {
     delete 'build'
 }
 
-List servlet = ['javax.servlet:javax.servlet-api:4.0.0']
+processResources {
+    setDuplicatesStrategy(DuplicatesStrategy.INCLUDE)
+}
 
-List apache_commons = [
-]
+processTestResources {
+    setDuplicatesStrategy(DuplicatesStrategy.INCLUDE)
+}
+
+tasks.withType(JavaCompile) {
+    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+}
+
+List servlet = ['javax.servlet:javax.servlet-api:4.0.0']
 
 def spring_version = "4.3.16.RELEASE"
 List junit = [
@@ -70,8 +79,6 @@ List spring = [
 ]
 
 List log4jweb = ['org.apache.logging.log4j:log4j-web:2.8.2']
-
-List dom4j = ['dom4j:dom4j:1.6.1']
 
 def jackson_ver = "2.9.4"
 List jackson = [
@@ -89,18 +96,15 @@ List logger = [
 ]
 
 dependencies {
-    compile spring, apache_commons, log4jweb, jackson, dom4j, disruptor, logger
+    implementation spring, log4jweb, jackson, disruptor, logger
     providedCompile servlet
-    testCompile servlet, junit
+    testImplementation servlet, junit
 }
 
 compileJava.dependsOn clean
 compileJava.options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
 
 war {
-    destinationDir file('dist/apps')
-    archiveName "IDEA-IC-Tomcat.war"
-
     // 去掉和 Web 容器冲突的包（容器启动会报 Warning），不能直接用 exclude，因为 jar 包不属于 Resources
     rootSpec.exclude '**/javax.el-api*.jar'
 
@@ -113,16 +117,9 @@ war {
     }
 
     doLast {
-        copy {
-            from file('src/main/resources/')
-            into 'dist/conf'
-            exclude 'buildconf'
-        }
-
-        copy {
-            from file('src/main/resources/buildconf')
-            into 'dist/conf'
-        }
+        mkdir('dist/apps')
+        file(destinationDirectory.get().toString() + "/" + archiveFileName.get().toString())
+                .renameTo(file("dist/apps/" + projectName + ".war"))
     }
 }
 
