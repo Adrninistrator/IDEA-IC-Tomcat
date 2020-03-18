@@ -243,3 +243,13 @@ void writeFile(File file, String[] contentArray) {
         }
     }
 }
+
+// 刷新Web资源文件至Tomcat加载的应用目录中
+task refreshWebFile {
+    doLast {
+        copy {
+            from file("src/main/webapp/")
+            into file(tomcatBuildDir)
+        }
+    }
+}

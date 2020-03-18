@@ -4,11 +4,11 @@ IntelliJ IDEA Community Edition（社区版）不支持Tomcat，如果不想花�
 
 # 2. 快速开始
 
-设置环境变量TOMCAT_HOME_4IDEA，指定需要使用的Tomcat的安装目录，例如“C:\program\apache-tomcat-7.0.79”。
+设置环境变量TOMCAT_HOME_4IDEA，指定需要使用的Tomcat的安装目录，例如“ C:\program\apache-tomcat-7.0.79 ”。
 
-下载 https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/runTomcat.gradle 脚本，拷贝至Java Web应用工程中，在build.gradle脚本中添加“apply from: 'runTomcat.gradle'”。
+下载 [https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/runTomcat.gradle](https://github.com/Adrninistrator/IDEA-IC-Tomcat/blob/master/runTomcat.gradle) 脚本，拷贝至Java Web应用工程中，在build.gradle脚本中添加“apply from: 'runTomcat.gradle'”。
 
-执行以下Gradle脚本，即可启动Tomcat进程并加载对应的应用。
+执行以下Gradle命令，即可启动Tomcat进程并加载对应的应用。
 
 ```gradle
 gradlew startTomcat -DappName=test-tomcat -Darg4Tomcat="-DtestValue=aaabbbccc -Dlog.home=E:\desktop\log-test"
@@ -16,6 +16,12 @@ gradlew startTomcat -DappName=test-tomcat -Darg4Tomcat="-DtestValue=aaabbbccc -D
 
 - appName参数用于指定应用名称及访问路径；
 - arg4Tomcat参数用于指定应用的JVM启动参数，需要使用半角双引号包含。
+
+执行以下Gradle命令，可以刷新Web资源文件至Tomcat加载的应用目录中，在不重启进程时使Web资源文件修改生效。
+
+```gradle
+gradlew refreshWebFile
+```
 
 # 3. 尝试的方法
 
@@ -34,7 +40,7 @@ gradlew startTomcat -DappName=test-tomcat -Darg4Tomcat="-DtestValue=aaabbbccc -D
 
 之后通过Gradle脚本，使IDEA社区版支持Tomcat（也支持IDEA Ultimate版）。
 
-完成的Gradle脚本及示例Web工程代码可以从 https://github.com/Adrninistrator/IDEA-IC-Tomcat/ 、 https://gitee.com/adrninistrator/IDEA-IC-Tomcat/  下载，脚本内容很短，有效行数不超过200行，处理也很简单。
+完成的Gradle脚本及示例Web工程代码可以从 [https://github.com/Adrninistrator/IDEA-IC-Tomcat/](https://github.com/Adrninistrator/IDEA-IC-Tomcat/) 、 [https://gitee.com/adrninistrator/IDEA-IC-Tomcat/](https://gitee.com/adrninistrator/IDEA-IC-Tomcat/)  下载，脚本内容很短，有效行数不超过200行，处理也很简单。
 
 通过上述Gradle脚本，结合IDEA的功能，在完成配置后，可以实现以下功能，能够达到与Eclipse或IDEA Ultimate版本对Tomcat支持的功能接近的效果。
 
@@ -99,7 +105,7 @@ gradlew testTask -Darg=abc
 
 打开IDEA的“Run/Debug Configurations”窗口，点击加号后，从弹出菜单中选择“Gradle”，可以新增一个配置，用于执行对应的Gradle任务。
 
-![pic](pic/a01.jpg)
+![](pic/a01.jpg)
 
 打开“Configuration”标签页，对参数进行修改。
 
@@ -109,40 +115,40 @@ gradlew testTask -Darg=abc
 
 - 在“VM options”右侧填入需要传递给Gradle脚本的JVM参数，如“-Darg=test_arg”，点击箭头图标可以展开编辑框。
 
-![pic](pic/a02.jpg)
+![](pic/a02.jpg)
 
 在Run/Debug Configurations中完成配置后，可以选中对应的配置，点击执行按钮开始执行。
 
-![pic](pic/a03.jpg)
+![](pic/a03.jpg)
 
 执行的结果在“Run”窗口中显示，如下所示：
 
-![pic](pic/a04.jpg)
+![](pic/a04.jpg)
 
 当需要修改Run/Debug Configurations使用的Gradle时，可以打开IDEA的“File | Settings | Build, Execution, Deployment | Build Tools | Gradle”菜单，修改“Use Gradle from”选项。
 
-![pic](pic/a05.jpg)
+![](pic/a05.jpg)
 
 
 #### 4.3.2.1. 解决在Run/Debug Configurations中执行Gradle脚本中文乱码问题
 
 在Run/Debug Configurations中执行Gradle脚本或编译过程时，输出的中文可能乱码。
 
-![pic](pic/a06.jpg)
+![](pic/a06.jpg)
 
 或如下图所示：
 
-![pic](pic/a07.jpg)
+![](pic/a07.jpg)
 
 进行以下设置，可以解决上述中文乱码问题。
 
 - 打开IDEA的“Help”“Edit Custom VM Options...”菜单；
 
-![pic](pic/a08.jpg)
+![](pic/a08.jpg)
 
 - 在打开的文件最后增加“-Dfile.encoding=UTF-8”；
 
-![pic](pic/a09.jpg)
+![](pic/a09.jpg)
 
 - 重启已打开的IDEA后生效。
 
@@ -152,7 +158,7 @@ gradlew testTask -Darg=abc
 
 打开IDEA的“Run/Debug Configurations”窗口，点击加号后，从弹出菜单中选择“Remote”，可以新增一个配置，用于进行远程调试。
 
-![pic](pic/a10.jpg)
+![](pic/a10.jpg)
 
 打开“Configuration”标签页，对参数进行修改。
 
@@ -162,7 +168,7 @@ gradlew testTask -Darg=abc
 - “Port”参数指定被调试的Java进程监听的调试端口
 - “Use module classpath”选择被调试的Java进程对应的源代码模块
 
-![pic](pic/a11.jpg)
+![](pic/a11.jpg)
 
 “Command line arguments for remote JVM”展示的调试参数不能编辑，会跟随上方的参数变化。
 
@@ -179,15 +185,15 @@ gradlew testTask -Darg=abc
 
 选中对应的远程调试配置，点击调试按钮开始调试，与使用IDEA启动Java进程并调试类似。
 
-![pic](pic/a12.jpg)
+![](pic/a12.jpg)
 
 调试启动成功后，在“Debug”“Console”窗口提示“Connected to the target VM”，如下所示。
 
-![pic](pic/a13.jpg)
+![](pic/a13.jpg)
 
 点击停止按钮可以停止调试，IDEA的“Debug”窗口会出现类似“Disconnected from the target VM, address: 'localhost:5555', transport: 'socket'”的提示。
 
-![pic](pic/a14.jpg)
+![](pic/a14.jpg)
 
 停止被调试Java进程时，IDEA启动的调试会自动结束。
 
@@ -204,6 +210,8 @@ gradlew testTask -Darg=abc
 ### 4.5.1. 任务及参数说明
 
 runTomcat.gradle脚本中提供了名称为“startTomcat”的任务，用于启动Tomcat并加载Web应用。
+
+使用refreshWebFile任务，可以刷新Web资源文件至Tomcat加载的应用目录中，在不重启进程时使Web资源文件修改生效。
 
 在脚本中使用了以下参数。
 
@@ -319,11 +327,11 @@ instanceDir参数值: C:\Users\user\.tomcat_idea
 
 当以上Gradle脚本执行成功后，会启动Tomcat，Tomcat进程会产生单独的命令行窗口。
 
-![pic](pic/a15.jpg)
+![](pic/a15.jpg)
 
 使用浏览器访问示例工程的Controller，URL为“ http://localhost:8080/test-tomcat/testrest/get ”，输出结果为当前时间戳及“testValue”对应的JVM参数值，访问结果如下所示：
 
-![pic](pic/a16.jpg)
+![](pic/a16.jpg)
 
 #### 4.5.3.2. 使用Tomcat实例启动脚本启动Tomcat进程
 
@@ -347,7 +355,7 @@ runTomcat.gradle脚本的“startTomcat”任务执行时，会在当前Web应�
 
 执行上述停止脚本，会执行Tomcat提供的stop命令，可以停止Tomcat进程，应用实例可以接收到Web容器销毁通知，示例工程的TestPostConstructLazyFalse.preDestroy()方法会执行，当前目录会生成目录，如下所示。
 
-![pic](pic/a17.jpg)
+![](pic/a17.jpg)
 
 #### 4.5.3.4. 调试Web应用
 
@@ -378,7 +386,7 @@ gradlew -DappName=test-tomcat
 
 对URI“/testrest/get”对应的TestRestController.get()方法设置断点，通过浏览器访问后，IDEA调试器进入断点，可在“Debug”“Debugger”窗口查看。
 
-![pic](pic/a18.jpg)
+![](pic/a18.jpg)
 
 ##### 4.5.3.4.2. 从进程启动开始调试（操作两次）
 
@@ -396,7 +404,7 @@ gradlew -DappName=test-tomcat
 
 将Gradle任务“startTomcat”的“arg4Tomcat”参数中配置的“suspend”参数设置为“y”，再通过该命令启动Tomcat，Tomcat窗口只显示“Listening for transport dt_socket at address: 5555”，未显示其他内容，即Tomcat进程此时在等待调试器连接address参数对应的端口，未完成启动。
 
-![pic](pic/a19.jpg)
+![](pic/a19.jpg)
 
 - 启动IDEA调试
 
@@ -406,7 +414,7 @@ gradlew -DappName=test-tomcat
 
 查看IDEA调试窗口，已进入以上设置的断点，证明可以从Web应用启动开始调试。
 
-![pic](pic/a20.jpg)
+![](pic/a20.jpg)
 
 ##### 4.5.3.4.3. 从进程启动开始调试（一键完成）
 
@@ -414,15 +422,15 @@ gradlew -DappName=test-tomcat
 
 打开IDEA的“Run/Debug Configurations”窗口，选择“Remote”配置，点击“Before launch: Activate tool window”下方的加号按钮，选择“Run Gradle task”。
 
-![pic](pic/a21.jpg)
+![](pic/a21.jpg)
 
 弹出“Select Gradle Task”窗口，“Gradle project”“Tasks”“VM options”参数配置，可参考在IDEA添加Gradle配置，通过“startTomcat”任务启动Tomcat进程的步骤，需要确保“VM options”参数填写的“arg4Tomcat”参数中的调试参数“suspend”为“y”。
 
-![pic](pic/a22.jpg)
+![](pic/a22.jpg)
 
 “Before launch: Activate tool window”下方的列表会出现配置的Gradle任务。
 
-![pic](pic/a23.jpg)
+![](pic/a23.jpg)
 
 完成以上配置后，在启动IDEA调试之前，会执行指定的Gradle任务“startTomcat”，以“suspend=y”的调试参数启动Tomcat进程。可以实现一键从进程启动开始调试，与IDEA Ultimate版或Eclipse对Web应用从启动开始调试的效果类似。
 
@@ -432,21 +440,21 @@ gradlew -DappName=test-tomcat
 
 打开IDEA的“Project Structure”窗口，选择“Project Settings”“Modules”标签页，在打开的窗口中选择Web项目主模块，选择“Dependencies”标签页，点击加号按钮，选择“JARs or directories...”菜单。
 
-![pic](pic/a24.jpg)
+![](pic/a24.jpg)
 
 在弹出的窗口，选择当前使用的Tomcat的安装目录的lib目录。
 
-![pic](pic/a25.jpg)
+![](pic/a25.jpg)
 
 完成添加后，Tomcat的lib目录会出现在“Dependencies”标签页的最下方。
 
-![pic](pic/a26.jpg)
+![](pic/a26.jpg)
 
 当刷新Gradle后，项目配置会重置，以上添加的依赖会被清理，需要重新添加。
 
 完成以上配置后，在Tomcat的org.apache.catalina.startup.HostConfig$DeployDescriptor类run方法设置断点，从进程启动开始调试，可以在IDEA的Debug窗口看到已进入断点。该方法是Tomcat启动时执行的第一个Tomcat的类的方法。
 
-![pic](pic/a27.jpg)
+![](pic/a27.jpg)
 
 ## 4.6. 其他说明
 
@@ -458,7 +466,7 @@ runTomcat.gradle脚本中buildFiles4WebApp方法用于生成Web应用所需文�
 
 被调试Java进程的调试参数中指定的adderss参数对应的调试端口，需要确保未被监听，否则被调试Java进程会启动失败，窗口会自动消失，Tomcat的提示如下。
 
-![pic](pic/a28.jpg)
+![](pic/a28.jpg)
 
 - 重新创建Tomcat实例
 

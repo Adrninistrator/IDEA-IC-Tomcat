@@ -243,3 +243,13 @@ void writeFile(File file, String[] contentArray) {
         }
     }
 }
+
+// Refresh the web resource file to the application directory loaded by Tomcat
+task refreshWebFile {
+    doLast {
+        copy {
+            from file("src/main/webapp/")
+            into file(tomcatBuildDir)
+        }
+    }
+}
